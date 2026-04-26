@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeopardy Classroom</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; font-family: 'Outfit', sans-serif; overflow: hidden; }
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #060918;
+      --surface: #0d1235;
+      --surface2: #111840;
+      --text: #e8eaf6;
+      --primary: #ffd54f;
+      --secondary: #3949ab;
+      --accent: #1a237e;
+    }
+
+    body { background: var(--bg); color: var(--text); margin: 0; }
+
+    /* ===== AUTHENTIC JEOPARDY BOARD ===== */
+    .jeopardy-board-bg {
+      background: radial-gradient(ellipse at 20% 50%, rgba(57,73,171,0.3) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(255,213,79,0.08) 0%, transparent 50%),
+                  var(--bg);
+    }
+
+    /* Classic Jeopardy cell - deep blue with gold text */
+    .cell-btn {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(160deg, #1a237e 0%, #0d1257 60%, #060d40 100%);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      border-radius: 4px;
+      min-height: 60px;
+      border: 2px solid rgba(255,213,79,0.25);
+      text-shadow: 0 0 20px rgba(255,213,79,0.6), 2px 2px 4px rgba(0,0,0,0.8);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .cell-btn::before {
+      content: '$';
+      font-size: 0.55em;
+      opacity: 0.7;
+      margin-right: 2px;
+    }
+
+    .cell-btn:not(.used):hover {
+      transform: scale(1.05);
+      background: linear-gradient(160deg, #283593 0%, #1a237e 60%, #0d1257 100%);
+      box-shadow: 0 0 30px rgba(255,213,79,0.4), 0 0 60px rgba(57,73,171,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border-color: rgba(255,213,79,0.6);
+      z-index: 2;
+    }
+
+    .cell-btn.used {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Category header - classic deep blue */
+    .cat-header {
+      background: linear-gradient(180deg, #1a237e 0%, #0d1257 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      padding: 0.75rem 0.5rem;
+      border-radius: 4px;
+      font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+      line-height: 1.2;
+      border: 2px solid rgba(255,213,79,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      word-break: break-word;
+    }
+
+    /* Jeopardy title glow */
+    .jeopardy-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      background: linear-gradient(135deg, #ffd54f 0%, #ffb300 40%, #ffd54f 60%, #fff8e1 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 20px rgba(255,213,79,0.6));
+      text-shadow: none;
+    }
+
+    /* Modal - authentic dark blue */
+    .modal-overlay { animation: fadeIn 0.2s ease; }
+    .modal-content { animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Question modal - authentic blue */
+    .q-modal-inner {
+      background: linear-gradient(180deg, #0d1257 0%, #060d40 100%);
+      border: 3px solid rgba(255,213,79,0.4);
+      box-shadow: 0 0 60px rgba(255,213,79,0.15), 0 0 120px rgba(57,73,171,0.3);
+    }
+
+    /* Score */
+    .score-val { font-family: 'JetBrains Mono', monospace; }
+
+    /* Timer bar */
+    .timer-bar { transition: width 1s linear; }
+
+    /* Toast */
+    .toast { animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards; }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 3px; }
+
+    /* Input focus */
+    .field-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(255,213,79,0.25); }
+
+    /* ===== SETUP / QUIZ MANAGEMENT ===== */
+    .setup-card { background: var(--surface); border: 1px solid rgba(255,213,79,0.12); border-radius: 1rem; }
+    .quiz-row:hover { background: rgba(255,213,79,0.04); }
+
+    /* Action buttons */
+    .btn-play  { background: #1b5e20; color: #a5d6a7; border: 1px solid #2e7d32; }
+    .btn-play:hover  { background: #2e7d32; }
+    .btn-detail  { background: #0d47a1; color: #90caf9; border: 1px solid #1565c0; }
+    .btn-detail:hover  { background: #1565c0; }
+    .btn-edit  { background: rgba(255,255,255,0.07); color: #90caf9; border: 1px solid rgba(255,255,255,0.12); }
+    .btn-edit:hover { background: rgba(255,255,255,0.12); }
+    .btn-delete { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .btn-delete:hover { background: rgba(239,68,68,0.25); }
+
+    /* Leaderboard podium */
+    .leaderboard-active { border-left: 3px solid var(--primary); background: rgba(255,213,79,0.08); }
+
+    /* Board cells gap */
+    #board { gap: 3px; }
+  </style>
+</head>
+<body class="h-full">
+
+<div id="app" class="h-full w-full flex flex-col">
+  <!-- TOAST -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[99] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ===================== SCREEN: QUIZ LIST (HOME) ===================== -->
+  <div id="screen-home" class="h-full w-full flex flex-col overflow-auto">
+    <!-- Header -->
+    <div class="shrink-0 py-8 px-4 text-center" style="background:linear-gradient(180deg,#060918 0%,#0a0e27 100%)">
+      <div class="jeopardy-title text-5xl md:text-6xl mb-2">JEOPARDY!</div>
+      <p class="text-sm opacity-50 tracking-widest uppercase">Classroom Edition</p>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 p-4 max-w-2xl w-full mx-auto space-y-4">
+      <!-- Quiz List Header -->
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Daftar Quiz
+        </h2>
+        <button onclick="openCreateQuizModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-all" style="background:var(--primary);color:#060918">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Quiz Baru
+        </button>
+      </div>
+
+      <!-- List -->
+      <div id="quiz-list-container" class="space-y-3"></div>
+      <div id="empty-quiz-msg" class="setup-card p-10 text-center flex flex-col items-center gap-3" style="display:none !important">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p class="text-sm opacity-40">Belum ada quiz. Buat quiz baru!</p>
+      </div>
+
+      <!-- Settings always visible -->
+      <div class="setup-card p-5 space-y-3">
+        <h3 class="font-bold text-sm uppercase tracking-widest opacity-60">Pengaturan Game</h3>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" id="chk-timer" checked class="w-4 h-4 rounded accent-yellow-400">
+          <span class="text-sm">Timer soal (30 detik)</span>
+        </label>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" id="chk-deduct" checked class="w-4 h-4 rounded accent-yellow-400">
+          <span class="text-sm">Kurangi skor jika salah</span>
+        </label>
+      </div>
+
+      <!-- Teams -->
+      <div class="setup-card p-5">
+        <h3 class="font-bold text-sm uppercase tracking-widest opacity-60 mb-3 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#ffd54f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Tim / Pemain
+        </h3>
+        <div id="team-list" class="space-y-2"></div>
+        <button id="add-team-btn" class="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all" style="background:var(--secondary);color:white">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Tim
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN: QUIZ DETAIL ===================== -->
+  <div id="screen-detail" class="h-full w-full flex-col overflow-hidden" style="display:none">
+    <!-- Top bar -->
+    <div class="shrink-0 flex items-center justify-between px-4 py-3 border-b" style="background:var(--surface);border-color:rgba(255,213,79,0.15)">
+      <button onclick="showScreen('home')" class="flex items-center gap-1.5 text-sm font-semibold opacity-70 hover:opacity-100 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Daftar Quiz
+      </button>
+      <h2 id="detail-title" class="font-bold text-base" style="color:var(--primary)">Detail Quiz</h2>
+      <div class="flex gap-2">
+        <button onclick="openImportModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all" style="background:#0d47a1;color:#90caf9;border:1px solid #1565c0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+        </button>
+        <button onclick="openAddCategoryModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all" style="background:var(--primary);color:#060918">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Kategori
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="shrink-0 flex items-center gap-4 px-4 py-2 border-b" style="background:rgba(255,213,79,0.04);border-color:rgba(255,213,79,0.1)">
+      <span class="text-xs opacity-50">
+        <span id="detail-cat-count" class="font-bold text-yellow-400">0</span> kategori
+      </span>
+      <span class="w-px h-3 bg-white/20"></span>
+      <span class="text-xs opacity-50">
+        <span id="detail-q-count" class="font-bold text-yellow-400">0</span> soal total
+      </span>
+    </div>
+
+    <!-- Category & question list -->
+    <div class="flex-1 overflow-auto p-4 space-y-4" id="detail-categories-container">
+      <p id="empty-detail-msg" class="text-center py-10 text-sm opacity-40">Belum ada kategori. Tambah kategori atau import!</p>
+    </div>
+  </div>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <div id="screen-game" class="h-full w-full flex-col" style="display:none">
+    <!-- Top bar: authentic Jeopardy header -->
+    <div class="shrink-0 flex items-center justify-between px-3 py-2" style="background:#060918;border-bottom:2px solid rgba(255,213,79,0.3)">
+      <div class="jeopardy-title text-xl md:text-2xl">JEOPARDY!</div>
+      <div class="text-xs opacity-40 hidden md:block" id="game-quiz-name"></div>
+      <div class="flex gap-1.5">
+        <button id="btn-download-results" title="Unduh Hasil" class="p-2 rounded-lg transition-all hover:opacity-80" style="background:rgba(57,73,171,0.3)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button id="btn-fullscreen" title="Layar Penuh" class="p-2 rounded-lg transition-all hover:opacity-80" style="background:rgba(57,73,171,0.3)">
+          <svg id="fs-expand" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          <svg id="fs-compress" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+        </button>
+        <button id="btn-reset" title="Reset Skor" class="p-2 rounded-lg transition-all hover:opacity-80" style="background:rgba(57,73,171,0.3)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.31"/></svg>
+        </button>
+        <button id="btn-back-home" title="Kembali ke Menu" class="p-2 rounded-lg transition-all hover:opacity-80" style="background:rgba(57,73,171,0.3)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Game area -->
+    <div class="flex flex-1 overflow-hidden jeopardy-board-bg">
+      <!-- Board -->
+      <div class="flex-1 p-2 md:p-3 overflow-auto">
+        <div id="board" class="grid h-full" style="min-height:0"></div>
+      </div>
+      <!-- Leaderboard sidebar -->
+      <div class="w-48 md:w-56 shrink-0 flex flex-col gap-2 p-3 overflow-auto" style="background:rgba(6,9,24,0.85);border-left:2px solid rgba(255,213,79,0.15)">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-center opacity-40 pt-1">Skor</h3>
+        <div id="leaderboard" class="flex flex-col gap-2 flex-1"></div>
+        <div id="questions-left" class="text-center text-xs opacity-30 pb-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== QUESTION MODAL ===================== -->
+  <div id="q-modal" class="modal-overlay fixed inset-0 z-40 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.9)">
+    <div class="modal-content q-modal-inner w-full max-w-2xl rounded-2xl p-8 relative">
+      <div id="q-category" class="text-sm font-bold uppercase tracking-widest mb-1" style="color:var(--primary)"></div>
+      <div id="q-points" class="text-sm opacity-40 mb-4 font-mono"></div>
+      <div id="q-timer-bar-wrap" class="h-1.5 rounded-full mb-6 overflow-hidden" style="background:rgba(255,255,255,0.08)">
+        <div id="q-timer-bar" class="h-full rounded-full timer-bar" style="background:var(--primary);width:100%"></div>
+      </div>
+      <p id="q-text" class="text-xl md:text-2xl font-bold leading-snug mb-8 text-center" style="color:white"></p>
+      <div id="q-answer-wrap" class="hidden mb-6 p-4 rounded-xl" style="background:rgba(255,213,79,0.08);border:1px solid rgba(255,213,79,0.3)">
+        <div class="text-xs uppercase tracking-widest mb-1 opacity-40">Jawaban</div>
+        <p id="q-answer" class="text-xl font-bold" style="color:var(--primary)"></p>
+      </div>
+      <div id="q-actions" class="flex flex-wrap gap-3">
+        <button id="btn-show-answer" class="px-5 py-2.5 rounded-lg font-semibold" style="background:var(--primary);color:#060918">Tampilkan Jawaban</button>
+      </div>
+      <div id="q-team-btns" class="hidden flex-wrap gap-2 mt-4"></div>
+      <button id="btn-close-q" class="absolute top-4 right-4 p-1.5 rounded-lg opacity-40 hover:opacity-100 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== RESET CONFIRM ===================== -->
+  <div id="reset-modal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.85)">
+    <div class="modal-content rounded-2xl p-6 text-center max-w-sm w-full" style="background:var(--surface);border:1px solid rgba(255,213,79,0.2)">
+      <h3 class="text-xl font-bold mb-2">Reset Permainan?</h3>
+      <p class="text-sm opacity-50 mb-6">Semua skor dan progres akan direset.</p>
+      <div class="flex gap-3 justify-center">
+        <button id="btn-confirm-reset" class="px-6 py-2 rounded-lg font-semibold" style="background:#ef4444;color:white">Ya, Reset</button>
+        <button id="btn-cancel-reset" class="px-6 py-2 rounded-lg font-semibold" style="background:var(--secondary);color:white">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: CREATE/EDIT QUIZ ===================== -->
+  <div id="modal-quiz-form" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.85)">
+    <div class="modal-content rounded-2xl p-6 max-w-md w-full" style="background:var(--surface);border:1px solid rgba(255,213,79,0.25)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="quiz-form-title" class="font-bold text-lg" style="color:var(--primary)">Quiz Baru</h3>
+        <button onclick="closeModal('modal-quiz-form')" class="opacity-40 hover:opacity-100 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <input type="hidden" id="quiz-edit-id">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs opacity-50 mb-1">Nama Quiz *</label>
+          <input id="quiz-name-input" type="text" placeholder="contoh: Matematika Kelas 8" class="field-input w-full px-3 py-2.5 rounded-lg text-sm" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--text)">
+        </div>
+        <div>
+          <label class="block text-xs opacity-50 mb-1">Deskripsi</label>
+          <input id="quiz-desc-input" type="text" placeholder="opsional" class="field-input w-full px-3 py-2.5 rounded-lg text-sm" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--text)">
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button onclick="closeModal('modal-quiz-form')" class="flex-1 py-2.5 rounded-lg font-semibold text-sm" style="background:rgba(255,255,255,0.08)">Batal</button>
+          <button onclick="saveQuiz()" class="flex-1 py-2.5 rounded-lg font-bold text-sm" style="background:var(--primary);color:#060918">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: ADD/EDIT CATEGORY ===================== -->
+  <div id="modal-category-form" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.85)">
+    <div class="modal-content rounded-2xl p-6 max-w-lg w-full max-h-[90dvh] overflow-y-auto" style="background:var(--surface);border:1px solid rgba(255,213,79,0.25)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="cat-form-title" class="font-bold text-lg" style="color:var(--primary)">Tambah Kategori</h3>
+        <button onclick="closeModal('modal-category-form')" class="opacity-40 hover:opacity-100 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <input type="hidden" id="cat-edit-idx">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs opacity-50 mb-1">Nama Kategori *</label>
+          <input id="cat-name-input" type="text" placeholder="contoh: Matematika" class="field-input w-full px-3 py-2 rounded-lg text-sm" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--text)">
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs opacity-50">Soal</label>
+            <button onclick="addQuestionRow()" class="text-xs px-2 py-1 rounded-lg font-semibold" style="background:rgba(57,73,171,0.5);color:white">+ Soal</button>
+          </div>
+          <div id="cat-questions-list" class="space-y-2"></div>
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button onclick="closeModal('modal-category-form')" class="flex-1 py-2.5 rounded-lg font-semibold text-sm" style="background:rgba(255,255,255,0.08)">Batal</button>
+          <button onclick="saveCategory()" class="flex-1 py-2.5 rounded-lg font-bold text-sm" style="background:var(--primary);color:#060918">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: IMPORT ===================== -->
+  <div id="modal-import" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.85)">
+    <div class="modal-content rounded-2xl p-6 max-w-lg w-full max-h-[90dvh] overflow-y-auto" style="background:var(--surface);border:1px solid rgba(57,73,171,0.5)">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg flex items-center gap-2" style="color:#90caf9">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Soal
+        </h3>
+        <button onclick="closeModal('modal-import')" class="opacity-40 hover:opacity-100 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <!-- Format tabs -->
+        <div class="flex gap-2">
+          <button onclick="setImportTab('json')" id="tab-json" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all" style="background:rgba(57,73,171,0.6);color:white">JSON</button>
+          <button onclick="setImportTab('csv')" id="tab-csv" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)">CSV</button>
+        </div>
+        <div id="import-format-hint" class="text-xs opacity-50 rounded-lg px-3 py-2" style="background:rgba(0,0,0,0.2)">
+          Format JSON: <code class="text-blue-300">{"kategori":[{"nama":"...","soal":[{"pertanyaan":"...","jawaban":"...","poin":100}]}]}</code>
+        </div>
+        <textarea id="import-text-input" rows="7" placeholder="Tempel data di sini..." class="field-input w-full px-3 py-2 rounded-lg text-xs font-mono resize-none" style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:var(--text)"></textarea>
+        <div class="flex gap-2">
+          <label class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Pilih File
+            <input type="file" id="import-file-input" accept=".json,.csv" class="hidden" onchange="loadImportFile(event)">
+          </label>
+          <button onclick="executeImport()" class="flex-1 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2" style="background:#0d47a1;color:white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Import
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="downloadJSONTemplate()" class="flex-1 py-2 rounded-lg text-xs font-semibold opacity-60 hover:opacity-100 transition-all" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">
+            Unduh Template JSON
+          </button>
+          <button onclick="downloadCSVTemplate()" class="flex-1 py-2 rounded-lg text-xs font-semibold opacity-60 hover:opacity-100 transition-all" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">
+            Unduh Template CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+// ======================== STATE ========================
+let state = {
+  teams: [{ name: 'Tim 1', score: 0 }, { name: 'Tim 2', score: 0 }],
+  usedCells: new Set(),
+  timerEnabled: true,
+  deductEnabled: true,
+  currentQ: null,
+  timerInterval: null,
+  timerSeconds: 30,
+  activeTeamIdx: 0
+};
+
+// ======================== QUIZ DATA ========================
+let allQuizzes = [];
+let activeQuizId = null;
+let activeGameQuizId = null;
+let importTab = 'json';
+
+const SAMPLE_QUIZ = {
+  id: 'quiz_sample',
+  name: 'Pengetahuan Umum SD',
+  desc: 'Contoh soal default',
+  categories: [
+    { nama: "Matematika", soal: [
+      { pertanyaan: "Berapakah hasil dari 15 × 8?", jawaban: "120", poin: 100 },
+      { pertanyaan: "Akar kuadrat dari 144?", jawaban: "12", poin: 200 },
+      { pertanyaan: "Berapa nilai π (pi) hingga 2 desimal?", jawaban: "3,14", poin: 300 },
+      { pertanyaan: "Jika x² = 49, berapa nilai x?", jawaban: "7 atau -7", poin: 400 },
+      { pertanyaan: "Luas lingkaran dengan jari-jari 7 cm?", jawaban: "154 cm²", poin: 500 }
+    ]},
+    { nama: "IPA", soal: [
+      { pertanyaan: "Apa rumus kimia air?", jawaban: "H₂O", poin: 100 },
+      { pertanyaan: "Planet terbesar di tata surya?", jawaban: "Jupiter", poin: 200 },
+      { pertanyaan: "Proses tumbuhan membuat makanan?", jawaban: "Fotosintesis", poin: 300 },
+      { pertanyaan: "Jumlah tulang manusia dewasa?", jawaban: "206", poin: 400 },
+      { pertanyaan: "Partikel atom selain proton & elektron?", jawaban: "Neutron", poin: 500 }
+    ]},
+    { nama: "Sejarah", soal: [
+      { pertanyaan: "Kapan Indonesia merdeka?", jawaban: "17 Agustus 1945", poin: 100 },
+      { pertanyaan: "Presiden pertama Indonesia?", jawaban: "Ir. Soekarno", poin: 200 },
+      { pertanyaan: "Kerajaan Hindu tertua di Indonesia?", jawaban: "Kutai", poin: 300 },
+      { pertanyaan: "Di mana Sumpah Pemuda diikrarkan?", jawaban: "Jakarta (Batavia)", poin: 400 },
+      { pertanyaan: "Penulis naskah proklamasi?", jawaban: "Ir. Soekarno", poin: 500 }
+    ]},
+    { nama: "Bahasa", soal: [
+      { pertanyaan: "Sinonim dari kata 'cantik'?", jawaban: "Indah / Elok", poin: 100 },
+      { pertanyaan: "Antonim dari kata 'gelap'?", jawaban: "Terang", poin: 200 },
+      { pertanyaan: "Jenis kata dari 'berlari'?", jawaban: "Kata kerja (verba)", poin: 300 },
+      { pertanyaan: "Apa itu majas hiperbola?", jawaban: "Majas yang melebih-lebihkan", poin: 400 },
+      { pertanyaan: "Contoh kata serapan dari bahasa Arab?", jawaban: "Kursi, ilmu, kitab", poin: 500 }
+    ]},
+    { nama: "Geografi", soal: [
+      { pertanyaan: "Ibu kota Jepang?", jawaban: "Tokyo", poin: 100 },
+      { pertanyaan: "Sungai terpanjang di dunia?", jawaban: "Sungai Nil", poin: 200 },
+      { pertanyaan: "Benua terkecil di dunia?", jawaban: "Australia", poin: 300 },
+      { pertanyaan: "Gunung tertinggi di dunia?", jawaban: "Everest (8.849 m)", poin: 400 },
+      { pertanyaan: "Selat pemisah Jawa & Sumatera?", jawaban: "Selat Sunda", poin: 500 }
+    ]}
+  ]
+};
+
+// ======================== AUDIO ========================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAudio() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+function playSound(type) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    gain.gain.value = 0.15;
+    if (type === 'open') {
+      osc.frequency.value = 520; osc.type = 'sine';
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'correct') {
+      osc.frequency.value = 660; osc.type = 'sine';
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+      setTimeout(() => {
+        const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+        o2.connect(g2); g2.connect(ctx.destination);
+        g2.gain.value = 0.15; o2.frequency.value = 880; o2.type = 'sine';
+        g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        o2.start(); o2.stop(ctx.currentTime + 0.4);
+      }, 150);
+    } else if (type === 'wrong') {
+      osc.frequency.value = 200; osc.type = 'sawtooth';
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(); osc.stop(ctx.currentTime + 0.5);
+    } else if (type === 'tick') {
+      osc.frequency.value = 1000; osc.type = 'sine'; gain.gain.value = 0.05;
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.start(); osc.stop(ctx.currentTime + 0.05);
+    }
+  } catch(e) {}
+}
+
+// ======================== TOAST ========================
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  const bg = type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : 'var(--secondary)';
+  t.className = 'toast px-4 py-2 rounded-lg text-sm font-semibold shadow-lg pointer-events-auto';
+  t.style.cssText = `background:${bg};color:white`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ======================== SCREEN NAVIGATION ========================
+function showScreen(name) {
+  document.getElementById('screen-home').style.display = name === 'home' ? 'flex' : 'none';
+  document.getElementById('screen-detail').style.display = name === 'detail' ? 'flex' : 'none';
+  document.getElementById('screen-game').style.display = name === 'game' ? 'flex' : 'none';
+  if (name === 'home') {
+    clearInterval(state.timerInterval);
+    renderQuizList();
+    renderTeamSetup();
+  }
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+
+// ======================== STORAGE ========================
+function saveData() {
+  if (window.dataSdk && window.dataSdk.setData) window.dataSdk.setData(allQuizzes);
+}
+
+// ======================== QUIZ LIST ========================
+function renderQuizList() {
+  const container = document.getElementById('quiz-list-container');
+  const empty = document.getElementById('empty-quiz-msg');
+  container.innerHTML = '';
+  if (allQuizzes.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+  allQuizzes.forEach(quiz => {
+    const totalQ = quiz.categories.reduce((s, c) => s + c.soal.length, 0);
+    const card = document.createElement('div');
+    card.className = 'setup-card quiz-row rounded-xl p-4 transition-all';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" stroke="#ffd54f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="font-bold truncate" style="color:var(--primary)">${quiz.name}</span>
+          </div>
+          ${quiz.desc ? `<p class="text-xs opacity-40 truncate mb-1">${quiz.desc}</p>` : ''}
+          <div class="flex gap-3 text-xs opacity-40">
+            <span>${quiz.categories.length} kategori</span>
+            <span>·</span>
+            <span>${totalQ} soal</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5 shrink-0">
+          <button onclick="playQuiz('${quiz.id}')" class="btn-play flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Mainkan
+          </button>
+          <button onclick="openDetail('${quiz.id}')" class="btn-detail flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Detail
+          </button>
+          <button onclick="openEditQuizModal('${quiz.id}')" class="btn-edit flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button onclick="deleteQuiz('${quiz.id}')" class="btn-delete flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Hapus
+          </button>
+        </div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+// ======================== QUIZ CRUD ========================
+function openCreateQuizModal() {
+  document.getElementById('quiz-form-title').textContent = 'Quiz Baru';
+  document.getElementById('quiz-edit-id').value = '';
+  document.getElementById('quiz-name-input').value = '';
+  document.getElementById('quiz-desc-input').value = '';
+  openModal('modal-quiz-form');
+}
+
+function openEditQuizModal(id) {
+  const quiz = allQuizzes.find(q => q.id === id);
+  if (!quiz) return;
+  document.getElementById('quiz-form-title').textContent = 'Edit Quiz';
+  document.getElementById('quiz-edit-id').value = id;
+  document.getElementById('quiz-name-input').value = quiz.name;
+  document.getElementById('quiz-desc-input').value = quiz.desc || '';
+  openModal('modal-quiz-form');
+}
+
+function saveQuiz() {
+  const name = document.getElementById('quiz-name-input').value.trim();
+  if (!name) { showToast('Nama quiz tidak boleh kosong', 'error'); return; }
+  const desc = document.getElementById('quiz-desc-input').value.trim();
+  const editId = document.getElementById('quiz-edit-id').value;
+  if (editId) {
+    const q = allQuizzes.find(q => q.id === editId);
+    if (q) { q.name = name; q.desc = desc; }
+  } else {
+    allQuizzes.push({ id: 'quiz_' + Date.now(), name, desc, categories: [] });
+  }
+  saveData(); renderQuizList(); closeModal('modal-quiz-form');
+  showToast(editId ? 'Quiz diperbarui' : 'Quiz baru dibuat!', 'success');
+}
+
+function deleteQuiz(id) {
+  const quiz = allQuizzes.find(q => q.id === id);
+  if (!quiz) return;
+  if (!confirm(`Hapus quiz "${quiz.name}"? Semua kategori dan soal akan terhapus.`)) return;
+  allQuizzes = allQuizzes.filter(q => q.id !== id);
+  saveData(); renderQuizList();
+  showToast('Quiz dihapus', 'success');
+}
+
+function getActiveQuiz() { return allQuizzes.find(q => q.id === activeQuizId) || null; }
+
+// ======================== QUIZ DETAIL ========================
+function openDetail(id) {
+  activeQuizId = id;
+  const quiz = getActiveQuiz();
+  if (!quiz) return;
+  document.getElementById('detail-title').textContent = quiz.name;
+  renderDetailCategories();
+  showScreen('detail');
+}
+
+function renderDetailCategories() {
+  const quiz = getActiveQuiz();
+  const container = document.getElementById('detail-categories-container');
+  const emptyMsg = document.getElementById('empty-detail-msg');
+  if (!quiz) return;
+  document.getElementById('detail-cat-count').textContent = quiz.categories.length;
+  document.getElementById('detail-q-count').textContent = quiz.categories.reduce((s, c) => s + c.soal.length, 0);
+
+  // Remove old category cards, keep empty msg
+  container.querySelectorAll('.cat-card').forEach(el => el.remove());
+
+  if (quiz.categories.length === 0) {
+    emptyMsg.style.display = 'block';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+
+  quiz.categories.forEach((cat, ci) => {
+    const card = document.createElement('div');
+    card.className = 'cat-card rounded-xl overflow-hidden';
+    card.style.cssText = 'background:var(--surface);border:1px solid rgba(255,213,79,0.12)';
+
+    let html = `<div class="flex items-center justify-between px-4 py-3" style="background:rgba(255,213,79,0.06);border-bottom:1px solid rgba(255,213,79,0.1)">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" stroke="#ffd54f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <span class="font-bold text-sm" style="color:var(--primary)">${cat.nama}</span>
+        <span class="text-xs opacity-30">${cat.soal.length} soal</span>
+      </div>
+      <div class="flex gap-1.5">
+        <button onclick="openAddQuestionToCategory(${ci})" title="Tambah soal" class="p-1.5 rounded-lg text-xs transition-all" style="background:rgba(57,73,171,0.4);color:#90caf9">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button onclick="openEditCategoryModal(${ci})" title="Edit kategori" class="p-1.5 rounded-lg text-xs transition-all" style="background:rgba(255,255,255,0.07);color:#90caf9">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button onclick="deleteCategory(${ci})" title="Hapus kategori" class="p-1.5 rounded-lg text-xs transition-all" style="background:rgba(239,68,68,0.15);color:#f87171">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>`;
+
+    if (cat.soal.length > 0) {
+      html += `<div class="divide-y" style="divide-color:rgba(255,255,255,0.04)">`;
+      cat.soal.forEach((s, si) => {
+        html += `<div class="flex items-center gap-3 px-4 py-2.5">
+          <span class="text-xs font-mono font-bold px-2 py-0.5 rounded shrink-0" style="background:rgba(255,213,79,0.12);color:#ffd54f">$${s.poin}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs truncate opacity-80">${s.pertanyaan}</p>
+            <p class="text-xs truncate opacity-40">${s.jawaban}</p>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <button onclick="openEditQuestion(${ci},${si})" class="p-1 rounded opacity-50 hover:opacity-100 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="#90caf9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button onclick="deleteQuestion(${ci},${si})" class="p-1 rounded opacity-50 hover:opacity-100 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<p class="px-4 py-3 text-xs opacity-30">Belum ada soal di kategori ini.</p>`;
+    }
+
+    card.innerHTML = html;
+    container.insertBefore(card, document.getElementById('empty-detail-msg'));
+  });
+}
+
+// ======================== CATEGORY MODAL ========================
+let catModalTempQuestions = [];
+let catModalEditIdx = -1;
+
+function openAddCategoryModal() {
+  document.getElementById('cat-form-title').textContent = 'Tambah Kategori';
+  document.getElementById('cat-edit-idx').value = '';
+  document.getElementById('cat-name-input').value = '';
+  catModalTempQuestions = [{ pertanyaan: '', jawaban: '', poin: 100 }];
+  catModalEditIdx = -1;
+  renderCatQuestionRows();
+  openModal('modal-category-form');
+}
+
+function openEditCategoryModal(ci) {
+  const quiz = getActiveQuiz();
+  if (!quiz) return;
+  const cat = quiz.categories[ci];
+  document.getElementById('cat-form-title').textContent = 'Edit Kategori';
+  document.getElementById('cat-edit-idx').value = ci;
+  document.getElementById('cat-name-input').value = cat.nama;
+  catModalTempQuestions = cat.soal.map(s => ({ ...s }));
+  catModalEditIdx = ci;
+  renderCatQuestionRows();
+  openModal('modal-category-form');
+}
+
+function renderCatQuestionRows() {
+  const container = document.getElementById('cat-questions-list');
+  container.innerHTML = '';
+  catModalTempQuestions.forEach((q, i) => {
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 items-start p-2 rounded-lg';
+    row.style.background = 'rgba(0,0,0,0.2)';
+    row.innerHTML = `
+      <div class="flex-1 space-y-1">
+        <input type="text" value="${q.pertanyaan}" placeholder="Pertanyaan" data-qi="${i}" data-field="pertanyaan" class="q-field w-full px-2 py-1.5 rounded text-xs field-input" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text)">
+        <div class="flex gap-2">
+          <input type="text" value="${q.jawaban}" placeholder="Jawaban" data-qi="${i}" data-field="jawaban" class="q-field flex-1 px-2 py-1.5 rounded text-xs field-input" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text)">
+          <input type="number" value="${q.poin}" placeholder="Poin" data-qi="${i}" data-field="poin" class="q-field w-20 px-2 py-1.5 rounded text-xs field-input" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text)">
+        </div>
+      </div>
+      <button onclick="removeCatQuestion(${i})" class="p-1 mt-0.5 rounded opacity-50 hover:opacity-100 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    container.appendChild(row);
+  });
+  // Wire up inputs
+  container.querySelectorAll('.q-field').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const idx = parseInt(e.target.dataset.qi);
+      const field = e.target.dataset.field;
+      catModalTempQuestions[idx][field] = field === 'poin' ? (parseInt(e.target.value) || 0) : e.target.value;
+    });
+  });
+}
+
+function addQuestionRow() {
+  const lastPoin = catModalTempQuestions.length ? catModalTempQuestions[catModalTempQuestions.length - 1].poin + 100 : 100;
+  catModalTempQuestions.push({ pertanyaan: '', jawaban: '', poin: lastPoin });
+  renderCatQuestionRows();
+}
+
+function removeCatQuestion(i) {
+  if (catModalTempQuestions.length <= 1) { showToast('Harus ada minimal 1 soal', 'error'); return; }
+  catModalTempQuestions.splice(i, 1);
+  renderCatQuestionRows();
+}
+
+function saveCategory() {
+  const quiz = getActiveQuiz(); if (!quiz) return;
+  const name = document.getElementById('cat-name-input').value.trim();
+  if (!name) { showToast('Nama kategori tidak boleh kosong', 'error'); return; }
+  const soal = catModalTempQuestions.filter(q => q.pertanyaan.trim());
+  if (soal.length === 0) { showToast('Tambahkan minimal 1 soal', 'error'); return; }
+  const cat = { nama: name, soal };
+  const editIdx = document.getElementById('cat-edit-idx').value;
+  if (editIdx !== '') { quiz.categories[parseInt(editIdx)] = cat; }
+  else { quiz.categories.push(cat); }
+  saveData(); renderDetailCategories(); closeModal('modal-category-form');
+  showToast('Kategori disimpan!', 'success');
+}
+
+function deleteCategory(ci) {
+  const quiz = getActiveQuiz(); if (!quiz) return;
+  if (!confirm(`Hapus kategori "${quiz.categories[ci].nama}"?`)) return;
+  quiz.categories.splice(ci, 1);
+  saveData(); renderDetailCategories();
+  showToast('Kategori dihapus', 'success');
+}
+
+// ======================== QUESTION CRUD (INLINE CATEGORY) ========================
+function openAddQuestionToCategory(ci) {
+  const quiz = getActiveQuiz(); if (!quiz) return;
+  const cat = quiz.categories[ci];
+  const lastPoin = cat.soal.length ? cat.soal[cat.soal.length - 1].poin + 100 : 100;
+  catModalTempQuestions = [...cat.soal.map(s => ({...s})), { pertanyaan: '', jawaban: '', poin: lastPoin }];
+  document.getElementById('cat-edit-idx').value = ci;
+  document.getElementById('cat-name-input').value = cat.nama;
+  document.getElementById('cat-form-title').textContent = `Soal: ${cat.nama}`;
+  renderCatQuestionRows();
+  openModal('modal-category-form');
+}
+
+function openEditQuestion(ci, si) {
+  openEditCategoryModal(ci);
+  // Scroll to row after modal opens
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#cat-questions-list > div');
+    if (rows[si]) rows[si].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+function deleteQuestion(ci, si) {
+  const quiz = getActiveQuiz(); if (!quiz) return;
+  if (!confirm('Hapus soal ini?')) return;
+  quiz.categories[ci].soal.splice(si, 1);
+  saveData(); renderDetailCategories();
+  showToast('Soal dihapus', 'success');
+}
+
+// ======================== IMPORT ========================
+let currentImportQuizId = null;
+
+function openImportModal() {
+  currentImportQuizId = activeQuizId;
+  document.getElementById('import-text-input').value = '';
+  document.getElementById('import-file-input').value = '';
+  setImportTab('json');
+  openModal('modal-import');
+}
+
+function setImportTab(tab) {
+  importTab = tab;
+  const jsonBtn = document.getElementById('tab-json');
+  const csvBtn = document.getElementById('tab-csv');
+  const hint = document.getElementById('import-format-hint');
+  if (tab === 'json') {
+    jsonBtn.style.cssText = 'background:rgba(57,73,171,0.6);color:white';
+    csvBtn.style.cssText = 'background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)';
+    hint.innerHTML = 'Format JSON: <code class="text-blue-300">{"kategori":[{"nama":"...","soal":[{"pertanyaan":"...","jawaban":"...","poin":100}]}]}</code>';
+  } else {
+    csvBtn.style.cssText = 'background:rgba(57,73,171,0.6);color:white';
+    jsonBtn.style.cssText = 'background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)';
+    hint.innerHTML = 'Format CSV: <code class="text-blue-300">Kategori,Pertanyaan,Jawaban,Poin</code> (baris pertama header)';
+  }
+}
+
+function loadImportFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.name.endsWith('.csv')) setImportTab('csv'); else setImportTab('json');
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById('import-text-input').value = ev.target.result; };
+  reader.readAsText(file);
+}
+
+function parseImportJSON(text) {
+  const data = JSON.parse(text);
+  return (data.kategori || []).map(c => ({
+    nama: c.nama || 'Kategori',
+    soal: (c.soal || []).map(s => ({ pertanyaan: s.pertanyaan || '', jawaban: s.jawaban || '', poin: parseInt(s.poin) || 100 }))
+  }));
+}
+
+function parseImportCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+  const cats = {};
+  for (let i = 1; i < lines.length; i++) {
+    const [cat, q, a, p] = lines[i];
+    if (!cat) continue;
+    if (!cats[cat]) cats[cat] = { nama: cat, soal: [] };
+    cats[cat].soal.push({ pertanyaan: q || '', jawaban: a || '', poin: parseInt(p) || 100 });
+  }
+  return Object.values(cats);
+}
+
+function executeImport() {
+  const text = document.getElementById('import-text-input').value.trim();
+  if (!text) { showToast('Data kosong', 'error'); return; }
+  let categories = [];
+  try {
+    categories = importTab === 'json' ? parseImportJSON(text) : parseImportCSV(text);
+  } catch(e) { showToast('Format tidak valid: ' + e.message, 'error'); return; }
+  if (categories.length === 0) { showToast('Tidak ada data yang dapat diimpor', 'error'); return; }
+
+  const quiz = allQuizzes.find(q => q.id === currentImportQuizId);
+  if (!quiz) return;
+  // Merge: tambahkan categories baru, update jika nama sama
+  categories.forEach(newCat => {
+    const existing = quiz.categories.find(c => c.nama.toLowerCase() === newCat.nama.toLowerCase());
+    if (existing) {
+      // append questions
+      existing.soal.push(...newCat.soal);
+    } else {
+      quiz.categories.push(newCat);
+    }
+  });
+  saveData(); renderDetailCategories(); closeModal('modal-import');
+  const totalQ = categories.reduce((s,c) => s + c.soal.length, 0);
+  showToast(`Import berhasil: ${categories.length} kategori, ${totalQ} soal`, 'success');
+}
+
+function downloadJSONTemplate() {
+  const template = { kategori: [
+    { nama: "Kategori 1", soal: [
+      { pertanyaan: "Pertanyaan 1?", jawaban: "Jawaban 1", poin: 100 },
+      { pertanyaan: "Pertanyaan 2?", jawaban: "Jawaban 2", poin: 200 }
+    ]},
+    { nama: "Kategori 2", soal: [
+      { pertanyaan: "Pertanyaan 1?", jawaban: "Jawaban 1", poin: 100 }
+    ]}
+  ]};
+  const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'template-jeopardy.json'; a.click();
+  showToast('Template JSON diunduh', 'success');
+}
+
+function downloadCSVTemplate() {
+  const csv = 'Kategori,Pertanyaan,Jawaban,Poin\nKategori 1,Pertanyaan 1?,Jawaban 1,100\nKategori 1,Pertanyaan 2?,Jawaban 2,200\nKategori 2,Pertanyaan 1?,Jawaban 1,100';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'template-jeopardy.csv'; a.click();
+  showToast('Template CSV diunduh', 'success');
+}
+
+// ======================== TEAM SETUP ========================
+function renderTeamSetup() {
+  const list = document.getElementById('team-list');
+  list.innerHTML = '';
+  state.teams.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2';
+    row.innerHTML = `<input type="text" value="${t.name}" data-idx="${i}" class="field-input flex-1 px-3 py-2 rounded-lg text-sm" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--text)">
+      ${state.teams.length > 2 ? `<button data-delidx="${i}" class="p-2 rounded-lg transition-all hover:bg-red-500/20" style="color:#f87171">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      </button>` : ''}`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => { state.teams[+e.target.dataset.idx].name = e.target.value; });
+  });
+  list.querySelectorAll('[data-delidx]').forEach(btn => {
+    btn.addEventListener('click', () => { state.teams.splice(+btn.dataset.delidx, 1); renderTeamSetup(); });
+  });
+}
+
+document.getElementById('add-team-btn').addEventListener('click', () => {
+  if (state.teams.length >= 6) { showToast('Maksimal 6 tim', 'error'); return; }
+  state.teams.push({ name: `Tim ${state.teams.length + 1}`, score: 0 });
+  renderTeamSetup();
+});
+
+// ======================== PLAY QUIZ ========================
+function playQuiz(id) {
+  const quiz = allQuizzes.find(q => q.id === id);
+  if (!quiz) return;
+  if (quiz.categories.length === 0) { showToast('Quiz ini belum memiliki kategori', 'error'); return; }
+  activeGameQuizId = id;
+  state.timerEnabled = document.getElementById('chk-timer').checked;
+  state.deductEnabled = document.getElementById('chk-deduct').checked;
+  state.teams.forEach(t => t.score = 0);
+  state.usedCells = new Set();
+  state.activeTeamIdx = 0;
+  document.getElementById('game-quiz-name').textContent = quiz.name;
+  showScreen('game');
+  renderBoard(quiz.categories);
+  renderLeaderboard();
+}
+
+// ======================== BOARD ========================
+function renderBoard(categories) {
+  const board = document.getElementById('board');
+  const cols = categories.length;
+  board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  const maxQ = Math.max(...categories.map(c => c.soal.length));
+  board.style.gridTemplateRows = `auto repeat(${maxQ}, 1fr)`;
+  board.innerHTML = '';
+
+  categories.forEach(cat => {
+    const hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.textContent = cat.nama;
+    board.appendChild(hdr);
+  });
+
+  for (let rowIdx = 0; rowIdx < maxQ; rowIdx++) {
+    categories.forEach((cat, ci) => {
+      const soal = cat.soal[rowIdx];
+      const cell = document.createElement('div');
+      if (!soal) {
+        cell.className = 'rounded';
+        cell.style.background = 'transparent';
+        board.appendChild(cell); return;
+      }
+      const key = `${ci}-${rowIdx}`;
+      cell.className = `cell-btn ${state.usedCells.has(key) ? 'used' : ''}`;
+      cell.dataset.val = soal.poin;
+      cell.dataset.key = key;
+      // Show dollar amount (override ::before via direct content via JS)
+      cell.textContent = soal.poin;
+      cell.addEventListener('click', () => openQuestion(ci, rowIdx, key, categories));
+      board.appendChild(cell);
+    });
+  }
+  updateQuestionsLeft(categories);
+}
+
+function updateQuestionsLeft(categories) {
+  if (!categories) return;
+  const total = categories.reduce((s, c) => s + c.soal.length, 0);
+  const used = state.usedCells.size;
+  document.getElementById('questions-left').textContent = `${total - used} / ${total} soal tersisa`;
+  if (used === total) setTimeout(() => showToast('Semua soal selesai!', 'success'), 500);
+}
+
+// ======================== QUESTION MODAL ========================
+let currentCategories = null;
+
+function openQuestion(ci, si, key, categories) {
+  if (state.usedCells.has(key)) return;
+  currentCategories = categories;
+  const cat = categories[ci];
+  const soal = cat.soal[si];
+  state.currentQ = { ci, si, poin: soal.poin, key };
+  playSound('open');
+
+  document.getElementById('q-category').textContent = cat.nama;
+  document.getElementById('q-points').textContent = `$${soal.poin}`;
+  document.getElementById('q-text').textContent = soal.pertanyaan;
+  document.getElementById('q-answer').textContent = soal.jawaban;
+  document.getElementById('q-answer-wrap').classList.add('hidden');
+  document.getElementById('q-team-btns').classList.add('hidden');
+  document.getElementById('q-team-btns').classList.remove('flex');
+
+  // Reset action buttons
+  document.getElementById('q-actions').innerHTML = '<button id="btn-show-answer" class="px-5 py-2.5 rounded-lg font-semibold" style="background:var(--primary);color:#060918">Tampilkan Jawaban</button>';
+  document.getElementById('btn-show-answer').addEventListener('click', showAnswer);
+
+  const modal = document.getElementById('q-modal');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+
+  clearInterval(state.timerInterval);
+  const bar = document.getElementById('q-timer-bar');
+  if (state.timerEnabled) {
+    document.getElementById('q-timer-bar-wrap').classList.remove('hidden');
+    bar.style.width = '100%';
+    bar.style.background = 'var(--primary)';
+    let remaining = state.timerSeconds;
+    state.timerInterval = setInterval(() => {
+      remaining--;
+      bar.style.width = `${(remaining / state.timerSeconds) * 100}%`;
+      if (remaining <= 5) { bar.style.background = '#ef4444'; playSound('tick'); }
+      if (remaining <= 0) { clearInterval(state.timerInterval); showAnswer(); }
+    }, 1000);
+  } else {
+    document.getElementById('q-timer-bar-wrap').classList.add('hidden');
+  }
+}
+
+function showAnswer() {
+  clearInterval(state.timerInterval);
+  document.getElementById('q-answer-wrap').classList.remove('hidden');
+  document.getElementById('btn-show-answer')?.classList.add('hidden');
+
+  const wrap = document.getElementById('q-team-btns');
+  const activeTeam = state.teams[state.activeTeamIdx];
+  wrap.innerHTML = `<span class="text-xs opacity-40 w-full mb-1">${activeTeam.name} (aktif)</span>`;
+
+  const correctBtn = document.createElement('button');
+  correctBtn.className = 'px-6 py-2 rounded-lg text-sm font-semibold flex-1 flex items-center justify-center gap-1.5';
+  correctBtn.style.cssText = 'background:var(--primary);color:#060918';
+  correctBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> BENAR`;
+  correctBtn.addEventListener('click', () => awardPoints(state.activeTeamIdx, true));
+  wrap.appendChild(correctBtn);
+
+  if (state.deductEnabled) {
+    const wrongBtn = document.createElement('button');
+    wrongBtn.className = 'px-6 py-2 rounded-lg text-sm font-semibold flex-1 flex items-center justify-center gap-1.5';
+    wrongBtn.style.cssText = 'background:#ef4444;color:white';
+    wrongBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> SALAH`;
+    wrongBtn.addEventListener('click', () => awardPoints(state.activeTeamIdx, false));
+    wrap.appendChild(wrongBtn);
+  }
+
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold';
+  skipBtn.style.cssText = 'background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6)';
+  skipBtn.textContent = 'Lewati';
+  skipBtn.addEventListener('click', closeQuestion);
+  wrap.appendChild(skipBtn);
+  wrap.classList.remove('hidden'); wrap.classList.add('flex');
+}
+
+function awardPoints(teamIdx, correct) {
+  const pts = state.currentQ.poin;
+  if (correct) { state.teams[teamIdx].score += pts; playSound('correct'); showToast(`${state.teams[teamIdx].name} +${pts}`, 'success'); }
+  else { state.teams[teamIdx].score -= pts; playSound('wrong'); showToast(`${state.teams[teamIdx].name} −${pts}`, 'error'); }
+  renderLeaderboard(); closeQuestion();
+}
+
+function closeQuestion() {
+  clearInterval(state.timerInterval);
+  if (state.currentQ) {
+    state.usedCells.add(state.currentQ.key);
+    const cell = document.querySelector(`[data-key="${state.currentQ.key}"]`);
+    if (cell) cell.classList.add('used');
+    state.currentQ = null;
+    if (currentCategories) updateQuestionsLeft(currentCategories);
+  }
+  document.getElementById('q-modal').classList.add('hidden');
+  document.getElementById('q-modal').classList.remove('flex');
+  document.getElementById('q-timer-bar').style.background = 'var(--primary)';
+}
+
+document.getElementById('btn-show-answer').addEventListener('click', showAnswer);
+document.getElementById('btn-close-q').addEventListener('click', closeQuestion);
+
+// ======================== LEADERBOARD ========================
+function renderLeaderboard() {
+  const lb = document.getElementById('leaderboard');
+  lb.innerHTML = '';
+  const sorted = [...state.teams].map((t, i) => ({ ...t, origIdx: i })).sort((a, b) => b.score - a.score);
+  sorted.forEach((t, rank) => {
+    const isActive = t.origIdx === state.activeTeamIdx;
+    const div = document.createElement('div');
+    div.className = `rounded-xl p-2.5 cursor-pointer transition-all ${isActive ? 'leaderboard-active' : ''}`;
+    div.style.background = isActive ? '' : 'rgba(255,255,255,0.03)';
+    div.innerHTML = `<div class="flex items-center justify-between gap-1">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="text-xs opacity-25 shrink-0">#${rank+1}</span>
+        <span class="text-xs font-semibold truncate">${t.name}</span>
+      </div>
+      <span class="score-val font-bold text-sm shrink-0" style="color:${t.score >= 0 ? 'var(--primary)' : '#ef4444'}">${t.score >= 0 ? '$' : '-$'}${Math.abs(t.score)}</span>
+    </div>`;
+    div.addEventListener('click', () => {
+      state.activeTeamIdx = t.origIdx;
+      renderLeaderboard();
+      showToast(`Tim aktif: ${t.name}`, 'info');
+    });
+    lb.appendChild(div);
+  });
+}
+
+// ======================== GAME CONTROLS ========================
+document.getElementById('btn-download-results').addEventListener('click', () => {
+  const sorted = [...state.teams].sort((a, b) => b.score - a.score);
+  const csv = ['Ranking,Tim,Skor', ...sorted.map((t, i) => `${i+1},${t.name},${t.score}`)].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `hasil-jeopardy-${Date.now()}.csv`; a.click();
+  showToast('Hasil diunduh!', 'success');
+});
+
+document.getElementById('btn-fullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+});
+
+document.addEventListener('fullscreenchange', () => {
+  document.getElementById('fs-expand').style.display = document.fullscreenElement ? 'none' : '';
+  document.getElementById('fs-compress').style.display = document.fullscreenElement ? '' : 'none';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  document.getElementById('reset-modal').classList.remove('hidden');
+  document.getElementById('reset-modal').classList.add('flex');
+});
+
+document.getElementById('btn-cancel-reset').addEventListener('click', () => {
+  document.getElementById('reset-modal').classList.add('hidden');
+  document.getElementById('reset-modal').classList.remove('flex');
+});
+
+document.getElementById('btn-confirm-reset').addEventListener('click', () => {
+  clearInterval(state.timerInterval);
+  document.getElementById('q-modal').classList.add('hidden'); document.getElementById('q-modal').classList.remove('flex');
+  document.getElementById('reset-modal').classList.add('hidden'); document.getElementById('reset-modal').classList.remove('flex');
+  state.teams.forEach(t => t.score = 0);
+  state.usedCells = new Set();
+  state.activeTeamIdx = 0;
+  state.currentQ = null;
+  const quiz = allQuizzes.find(q => q.id === activeGameQuizId);
+  if (quiz) { renderBoard(quiz.categories); }
+  renderLeaderboard();
+  showToast('Permainan direset!', 'success');
+});
+
+document.getElementById('btn-back-home').addEventListener('click', () => {
+  clearInterval(state.timerInterval);
+  showScreen('home');
+});
+
+// ======================== DATA INIT ========================
+const dataHandler = {
+  onDataChanged(data) {
+    if (data && Array.isArray(data) && data.length > 0 && data[0].categories !== undefined) {
+      allQuizzes = data;
+    } else if (data && Array.isArray(data) && data.length > 0 && data[0].kategori !== undefined) {
+      // legacy per-quiz
+      allQuizzes = [{ id: 'quiz_default', name: 'Quiz Default', desc: '', categories: data[0].kategori }];
+    } else {
+      allQuizzes = [{ ...SAMPLE_QUIZ }];
+    }
+    renderQuizList();
+    renderTeamSetup();
+  }
+};
+
+(async () => {
+  try {
+    if (window.dataSdk) await window.dataSdk.init(dataHandler);
+    else dataHandler.onDataChanged(null);
+  } catch(e) { dataHandler.onDataChanged(null); }
+})();
+
+// Init display
+showScreen('home');
+</script>
+</body>
+</html>
