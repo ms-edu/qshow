@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Who Wants To Be A Millionaire? - Edisi SD</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            height: 100dvh;
+            width: 100vw;
+        }
+
+        /* Font khusus untuk teks Arab */
+        .arabic-text, [lang="ar"] {
+            font-family: 'Amiri', 'Traditional Arabic', 'Times New Roman', serif;
+            font-size: 1.2em;
+            direction: rtl;
+        }
+
+        /* Background biru gelap khas Millionaire */
+        .millionaire-bg {
+            background: radial-gradient(ellipse at 30% 30%, #0a1a3a 0%, #020410 100%);
+            position: relative;
+        }
+
+        /* Efek bintang */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Logo */
+        .millionaire-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0) 70%);
+            border-radius: 50%;
+            filter: blur(40px);
+            pointer-events: none;
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(255,215,0,0.5);
+            letter-spacing: 3px;
+        }
+
+        @media (min-width: 768px) {
+            .logo-text { font-size: 3rem; letter-spacing: 5px; }
+        }
+
+        .logo-sub {
+            font-size: 0.7rem;
+            color: #FFD700;
+            letter-spacing: 4px;
+            margin-top: -5px;
+            opacity: 0.8;
+        }
+
+        /* Tombol diamond */
+        .diamond-btn {
+            background: linear-gradient(135deg, #1a2a4a 0%, #0a1530 100%);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            font-weight: bold;
+            padding: 12px 30px;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .diamond-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2a3a5a 0%, #1a2a4a 100%);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+
+        /* Tombol Fullscreen */
+        .fullscreen-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a2a4a 0%, #0a1530 100%);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-size: 1.2rem;
+        }
+
+        .fullscreen-btn:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, #2a3a5a 0%, #1a2a4a 100%);
+            box-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        /* ========== LAYOUT UTAMA GAME ========== */
+        .game-container {
+            display: flex;
+            height: 100dvh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* KOLOM KIRI - PAPAN UANG (PRIZE LADDER) - FULL HEIGHT */
+        .prize-ladder-col {
+            width: clamp(180px, 18vw, 260px);
+            background: linear-gradient(135deg, rgba(5,10,25,0.95) 0%, rgba(2,4,16,0.98) 100%);
+            border-right: 2px solid #FFD700;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 20;
+            flex-shrink: 0;
+            height: 100dvh;
+        }
+
+        .prize-ladder-title {
+            text-align: center;
+            padding: clamp(10px, 1.5vh, 18px) 10px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #0a1a3a;
+            font-weight: 900;
+            font-size: clamp(0.75rem, 1.2vw, 1.2rem);
+            letter-spacing: 2px;
+            border-bottom: 2px solid #FFD700;
+            flex-shrink: 0;
+        }
+
+        .prize-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: clamp(5px, 1vh, 15px) 0;
+        }
+
+        .prize-item {
+            padding: clamp(5px, 0.8vh, 10px) clamp(8px, 1vw, 18px);
+            margin: clamp(2px, 0.4vh, 4px) clamp(4px, 0.8vw, 12px);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: clamp(0.6rem, 0.9vw, 0.9rem);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .prize-number {
+            color: #6a8aae;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .prize-amount {
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .prize-item.active {
+            background: linear-gradient(90deg, rgba(255,215,0,0.35) 0%, rgba(255,215,0,0.1) 100%);
+            border-left: 4px solid #FFD700;
+            color: #FFD700;
+            transform: scale(1.02);
+        }
+
+        .prize-item.active .prize-amount {
+            color: #FFD700;
+            text-shadow: 0 0 8px rgba(255,215,0,0.5);
+        }
+
+        .prize-item.passed {
+            color: #4a6a8a;
+        }
+
+        .prize-item.milestone {
+            border-left: 3px solid #FFD700;
+            background: rgba(255,215,0,0.08);
+        }
+
+        /* KOLOM TENGAH - SOAL & OPSI JAWABAN - FLEXIBLE HEIGHT */
+        .game-center-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(10px, 3vh, 30px) clamp(15px, 3vw, 40px);
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .question-box {
+            background: linear-gradient(135deg, #0a1a3a 0%, #06102a 100%);
+            border: 3px solid #FFD700;
+            border-radius: clamp(18px, 2.5vw, 35px);
+            padding: clamp(22px, 3.5vh, 40px) clamp(18px, 3vw, 45px);
+            width: 100%;
+            margin-bottom: clamp(18px, 3vh, 45px);
+            box-shadow: 0 15px 45px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .question-number {
+            position: absolute;
+            top: -18px;
+            left: 35px;
+            background: #FFD700;
+            color: #0a1a3a;
+            padding: 6px 22px;
+            border-radius: 40px;
+            font-weight: 800;
+            font-size: clamp(0.7rem, 1vw, 0.9rem);
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            font-size: clamp(1rem, 2.2vw, 1.8rem);
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .question-text:lang(ar), .question-text.arabic {
+            font-family: 'Amiri', serif;
+            font-size: clamp(1.1rem, 2.4vw, 2rem);
+            direction: rtl;
+        }
+
+        /* Opsi Jawaban - GRID 2 KOLOM */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(10px, 1.8vh, 22px);
+            width: 100%;
+        }
+
+        .option-btn {
+            background: linear-gradient(135deg, #0a1a3a 0%, #030a1a 100%);
+            border: 2px solid rgba(255,215,0,0.5);
+            border-radius: 60px;
+            padding: clamp(10px, 1.8vh, 20px) clamp(14px, 2vw, 28px);
+            font-weight: 700;
+            font-size: clamp(0.75rem, 1.2vw, 1.15rem);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 1.2vw, 18px);
+        }
+
+        .option-btn .option-text.arabic,
+        .option-btn .option-text[lang="ar"] {
+            font-family: 'Amiri', serif;
+            font-size: clamp(0.85rem, 1.3vw, 1.25rem);
+            direction: rtl;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255,215,0,0.3);
+            background: linear-gradient(135deg, #0f2560 0%, #061030 100%);
+        }
+
+        .option-letter {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #0a1a3a;
+            width: clamp(28px, 3.5vw, 48px);
+            height: clamp(28px, 3.5vw, 48px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: clamp(0.8rem, 1.2vw, 1.4rem);
+            flex-shrink: 0;
+        }
+
+        .option-text {
+            flex: 1;
+            line-height: 1.35;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #0a1a3a;
+            border-color: #FFD700;
+        }
+
+        .option-btn.selected .option-letter {
+            background: #0a1a3a;
+            color: #FFD700;
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+            border-color: #4ade80;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .option-btn.wrong {
+            background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+            border-color: #f87171;
+            animation: wrongShake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); box-shadow: 0 0 30px #22c55e; }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* KOLOM KANAN - LIFELINES SAJA */
+        .right-col {
+            width: clamp(70px, 9vw, 120px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(12px, 2.5vh, 28px);
+            padding: 20px clamp(5px, 1vw, 10px);
+            background: linear-gradient(135deg, rgba(5,10,25,0.7) 0%, rgba(2,4,16,0.8) 100%);
+            border-left: 1px solid rgba(255,215,0,0.3);
+            z-index: 20;
+            flex-shrink: 0;
+            height: 100dvh;
+        }
+
+        .lifeline-btn {
+            width: clamp(50px, 6vw, 80px);
+            height: clamp(50px, 6vw, 80px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-size: clamp(0.45rem, 0.7vw, 0.7rem);
+            font-weight: bold;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid;
+            background: linear-gradient(135deg, #1a2a4a, #0a1530);
+            gap: 4px;
+        }
+
+        .lifeline-btn span:first-child {
+            font-size: clamp(0.8rem, 1.3vw, 1.3rem);
+        }
+
+        .lifeline-btn:not(:disabled):hover {
+            transform: scale(1.1);
+        }
+
+        .lifeline-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Animasi hint */
+        .hint-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 550px;
+            z-index: 30;
+        }
+
+        .audience-chart, .phone-hint {
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive mobile */
+        @media (max-width: 768px) {
+            .prize-ladder-col {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100%;
+                width: 260px;
+                transition: left 0.3s ease;
+                z-index: 100;
+                border-right: 2px solid #FFD700;
+            }
+            .prize-ladder-col.open {
+                left: 0;
+            }
+            .right-col {
+                width: 65px;
+            }
+            .lifeline-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 0.45rem;
+            }
+            .lifeline-btn span:first-child {
+                font-size: 0.85rem;
+            }
+            .option-btn {
+                padding: 10px 12px;
+                font-size: 0.78rem;
+                gap: 8px;
+            }
+            .option-letter {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+            .question-box {
+                padding: 20px 18px;
+            }
+            .question-text {
+                font-size: 0.95rem;
+            }
+            .options-grid {
+                gap: 10px;
+            }
+            .game-center-col {
+                padding: 14px 12px;
+            }
+            .hamburger-btn {
+                position: fixed;
+                left: 10px;
+                top: 10px;
+                z-index: 101;
+                background: #FFD700;
+                color: #0a1a3a;
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 1.1rem;
+            }
+            .fullscreen-btn {
+                width: 38px;
+                height: 38px;
+                top: 10px;
+                right: 10px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .hamburger-btn { display: none; }
+            .mobile-overlay { display: none; }
+        }
+
+        .mobile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        /* Toast */
+        .toast-notification {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: fadeInOut 3s ease forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        .modal-overlay {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Fullscreen mode - dynamic adjustment */
+        :-webkit-full-screen .game-container,
+        :fullscreen .game-container {
+            height: 100vh;
+        }
+
+        :-webkit-full-screen .prize-ladder-col,
+        :fullscreen .prize-ladder-col {
+            height: 100vh;
+        }
+
+        :-webkit-full-screen .right-col,
+        :fullscreen .right-col {
+            height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #06102a; }
+        ::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 4px; }
+
+        /* ========== WIN CELEBRATION ========== */
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes winGlow {
+            0%, 100% { text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700; }
+            50% { text-shadow: 0 0 60px #FFD700, 0 0 120px #FFA500, 0 0 200px #FF6600; }
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-20px) scale(1.15); }
+            60% { transform: translateY(-8px) scale(1.05); }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1) rotate(180deg); }
+        }
+
+        @keyframes rainbowText {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .confetti-piece {
+            position: fixed;
+            top: -10px;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .win-title {
+            animation: winGlow 1.5s ease-in-out infinite;
+        }
+
+        .win-trophy {
+            animation: trophyBounce 1s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        .win-prize-amount {
+            animation: rainbowText 3s linear infinite;
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FF6600, #FFD700);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200%;
+        }
+
+        .sparkle-star {
+            position: absolute;
+            animation: sparkle ease-in-out infinite;
+            font-size: 1.5rem;
+            pointer-events: none;
+        }
+
+        .win-screen {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .win-bg-flash {
+            animation: winBgPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes winBgPulse {
+            0%, 100% { background: radial-gradient(ellipse at 30% 30%, #0a1a3a 0%, #020410 100%); }
+            50% { background: radial-gradient(ellipse at 50% 50%, #1a0a3a 0%, #0a0210 100%); }
+        }
+    </style>
+</head>
+<body class="millionaire-bg text-white">
+
+    <div class="stars" id="stars"></div>
+
+    <!-- Tombol Fullscreen di Kanan Atas -->
+    <button id="fullscreen-btn" class="fullscreen-btn" onclick="toggleFullscreen()">
+        <svg id="fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        <svg id="fs-compress-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+    </button>
+
+    <div id="app" class="relative z-10 h-full w-full">
+        
+        <!-- HOME SCREEN -->
+        <div id="screen-home" class="h-full flex flex-col items-center justify-center p-4">
+            <div class="millionaire-logo">
+                <div class="logo-glow"></div>
+                <div class="logo-text">WHO WANTS TO BE</div>
+                <div class="logo-text text-4xl md:text-6xl" style="font-size: 2.5rem;">A MILLIONAIRE?</div>
+                <div class="logo-sub">FIKIH - KELAS 5</div>
+            </div>
+            
+            <div class="mt-8 space-y-4 w-64">
+                <button onclick="startGame()" id="btn-play" class="diamond-btn w-full text-lg flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    MULAI
+                </button>
+                <button onclick="showScreen('screen-setup')" class="diamond-btn w-full bg-white/10 border-white/30 text-white flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                    SETUP SOAL
+                </button>
+            </div>
+            
+            <div class="absolute bottom-8 text-center text-gray-500 text-sm">
+                <span id="home-question-count">15 soal tersedia</span>
+            </div>
+        </div>
+
+        <!-- SETUP SCREEN -->
+        <div id="screen-setup" class="h-full flex flex-col p-4" style="display:none;">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="showScreen('screen-home')" class="text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Kembali
+                </button>
+                <h2 class="text-yellow-400 font-bold text-xl">Setup Soal</h2>
+                <button onclick="openCreateQuizModal()" class="flex items-center gap-1 text-sm bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-3 py-1.5 rounded-lg transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Quiz Baru
+                </button>
+            </div>
+
+            <!-- QUIZ LIST -->
+            <div id="panel-quiz-list" class="flex-1 overflow-auto">
+                <div id="quiz-list-container" class="space-y-3"></div>
+                <p id="empty-quiz-msg" class="text-gray-500 text-center py-10 flex flex-col items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Belum ada quiz. Buat quiz baru!
+                </p>
+            </div>
+        </div>
+
+        <!-- QUIZ DETAIL SCREEN -->
+        <div id="screen-quiz-detail" class="h-full flex flex-col p-4" style="display:none;">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="showScreen('screen-setup')" class="text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Daftar Quiz
+                </button>
+                <h2 id="detail-quiz-title" class="text-yellow-400 font-bold text-lg truncate max-w-xs">Detail Quiz</h2>
+                <div class="flex gap-2">
+                    <button onclick="openImportModal()" class="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import
+                    </button>
+                    <button onclick="openAddQuestionModal()" class="flex items-center gap-1 text-xs bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        + Soal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="flex items-center gap-3 mb-4 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
+                <div class="flex items-center gap-1.5 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="detail-soal-count" class="text-yellow-400 font-bold">0</span>
+                    <span class="text-gray-400">soal</span>
+                </div>
+                <div class="w-px h-4 bg-white/20"></div>
+                <span id="detail-quiz-desc" class="text-gray-400 text-xs truncate"></span>
+            </div>
+
+            <!-- Question list in detail -->
+            <div class="flex-1 overflow-auto">
+                <div id="detail-question-list" class="space-y-2"></div>
+                <p id="empty-detail-msg" class="text-gray-500 text-center py-10 flex flex-col items-center gap-2" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Belum ada soal. Tambah soal atau import!
+                </p>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="screen-game" class="game-container" style="display:none;">
+            
+            <div class="hamburger-btn" onclick="toggleMobileLadder()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </div>
+            <div id="mobile-overlay" class="mobile-overlay" style="display:none;" onclick="toggleMobileLadder()"></div>
+
+            <!-- KOLOM KIRI: PAPAN UANG (FULL HEIGHT) -->
+            <div id="prize-ladder-col" class="prize-ladder-col">
+                <div class="prize-ladder-title">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                        HADIAH
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                    </span>
+                </div>
+                <div id="ladder-items" class="prize-list"></div>
+            </div>
+
+            <!-- KOLOM TENGAH: SOAL DAN OPSI JAWABAN -->
+            <div class="game-center-col">
+                <div class="question-box">
+                    <div class="question-number" id="game-q-number">Pertanyaan 1</div>
+                    <p class="question-text" id="game-q-text">Memuat soal...</p>
+                </div>
+
+                <div class="options-grid" id="options-grid">
+                    <button id="opt-a" onclick="selectAnswer('A')" class="option-btn"><span class="option-letter">A</span><span class="option-text" id="opt-a-text"></span></button>
+                    <button id="opt-b" onclick="selectAnswer('B')" class="option-btn"><span class="option-letter">B</span><span class="option-text" id="opt-b-text"></span></button>
+                    <button id="opt-c" onclick="selectAnswer('C')" class="option-btn"><span class="option-letter">C</span><span class="option-text" id="opt-c-text"></span></button>
+                    <button id="opt-d" onclick="selectAnswer('D')" class="option-btn"><span class="option-letter">D</span><span class="option-text" id="opt-d-text"></span></button>
+                </div>
+            </div>
+
+            <!-- KOLOM KANAN: LIFELINES SAJA -->
+            <div class="right-col">
+                <button id="ll-5050" onclick="useLifeline('5050')" class="lifeline-btn" style="border-color: #4a9eff;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>50:50</span>
+                </button>
+                <button id="ll-phone" onclick="useLifeline('phone')" class="lifeline-btn" style="border-color: #4eff9e;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4eff9e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.58 3.43 2 2 0 0 1 3.55 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.5a16 16 0 0 0 5.59 5.59l.88-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <span>CALL</span>
+                </button>
+                <button id="ll-audience" onclick="useLifeline('audience')" class="lifeline-btn" style="border-color: #ff4e9e;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4e9e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>AUD</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- HINT CONTAINER -->
+        <div id="hint-container" class="hint-container">
+            <div id="audience-chart" class="audience-chart bg-black/70 rounded-xl p-3 border border-purple-500 text-center" style="display:none;">
+                <p class="text-purple-300 text-sm font-semibold mb-2 flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Polling Penonton
+                </p>
+                <div class="flex items-end justify-around h-24" id="audience-bars"></div>
+            </div>
+            <div id="phone-hint" class="phone-hint bg-gradient-to-r from-green-900/90 to-green-800/90 rounded-xl p-3 border border-green-500 text-center" style="display:none;">
+                <p class="text-green-300 text-sm font-semibold mb-1 flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.58 3.43 2 2 0 0 1 3.55 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.5a16 16 0 0 0 5.59 5.59l.88-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Telepon Teman:
+                </p>
+                <p id="phone-hint-text" class="text-white font-medium italic">"..."</p>
+            </div>
+        </div>
+
+        <!-- WIN SCREEN -->
+        <div id="screen-win" class="win-screen h-full flex flex-col items-center justify-center p-6 text-center" style="display:none;">
+            <div id="sparkles-container"></div>
+            <div class="millionaire-logo mb-4">
+                <div class="logo-text win-title" style="font-size: clamp(1.8rem, 4vw, 3.5rem);">SELAMAT!</div>
+                <div class="logo-sub" style="font-size: clamp(0.6rem, 1.2vw, 0.85rem); letter-spacing: 3px;">ANDA MENJADI MILLIONAIRE!</div>
+            </div>
+            <div class="win-trophy mb-4" style="font-size: clamp(4rem, 10vw, 7rem);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+            </div>
+            <div style="font-size: clamp(0.9rem, 1.5vw, 1.2rem); color: #FFD700; margin-bottom: clamp(4px, 1vh, 10px); letter-spacing: 2px;">HADIAH ANDA</div>
+            <p id="win-prize" class="win-prize-amount font-black mb-3" style="font-size: clamp(1.8rem, 5vw, 4rem);"></p>
+            <p id="win-detail" class="text-gray-300 mb-6" style="font-size: clamp(0.8rem, 1.3vw, 1rem);"></p>
+            <div class="flex gap-3 md:gap-4 justify-center flex-wrap">
+                <button onclick="startGame()" class="diamond-btn flex items-center gap-2" style="font-size: clamp(0.75rem, 1.2vw, 1rem);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    MAIN LAGI
+                </button>
+                <button onclick="showScreen('screen-home')" class="diamond-btn bg-white/10 border-white/30 text-white flex items-center gap-2" style="font-size: clamp(0.75rem, 1.2vw, 1rem);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- LOSE SCREEN (GAME OVER) -->
+        <div id="screen-result" class="h-full flex flex-col items-center justify-center p-6 text-center" style="display:none;">
+            <div class="millionaire-logo mb-6">
+                <div class="logo-text" style="font-size: clamp(1.5rem, 3vw, 2.5rem);">GAME OVER</div>
+            </div>
+            <div id="result-icon" class="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <h2 id="result-title" class="font-bold text-yellow-400 mb-2" style="font-size: clamp(1.3rem, 2.5vw, 2rem);"></h2>
+            <p id="result-prize" class="font-bold text-yellow-400 mb-2" style="font-size: clamp(1.5rem, 3.5vw, 2.5rem);"></p>
+            <p id="result-detail" class="text-gray-400 mb-8" style="font-size: clamp(0.75rem, 1.2vw, 0.95rem);"></p>
+            <div class="flex gap-3 md:gap-4 justify-center flex-wrap">
+                <button onclick="startGame()" class="diamond-btn flex items-center gap-2" style="font-size: clamp(0.75rem, 1.2vw, 1rem);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    MAIN LAGI
+                </button>
+                <button onclick="showScreen('screen-home')" class="diamond-btn bg-white/10 border-white/30 text-white flex items-center gap-2" style="font-size: clamp(0.75rem, 1.2vw, 1rem);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-dialog" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display:none;">
+        <div class="bg-gradient-to-b from-[#0a1a3a] to-[#030614] border-2 border-yellow-400 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
+            <p id="confirm-msg" class="text-lg mb-5">Apakah Anda yakin?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-yes" class="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold">Ya</button>
+                <button id="confirm-no" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 15 SOAL SD ==========
+        const DEFAULT_QUESTIONS = [
+            { number: 1, text: "Ibu kota negara Indonesia adalah?", a: "Bandung", b: "Surabaya", c: "Jakarta", d: "Medan", correct: "C" },
+            { number: 2, text: "Hewan yang bisa hidup di darat dan di air disebut?", a: "Amfibi", b: "Reptil", c: "Mamalia", d: "Unggas", correct: "A" },
+            { number: 3, text: "Planet terdekat dengan Matahari adalah?", a: "Venus", b: "Merkurius", c: "Bumi", d: "Mars", correct: "B" },
+            { number: 4, text: "Pahlawan proklamator Indonesia adalah?", a: "Diponegoro", b: "Soekarno-Hatta", c: "Kartini", d: "Hasanuddin", correct: "B" },
+            { number: 5, text: "Gunung tertinggi di dunia adalah?", a: "Kilimanjaro", b: "Everest", c: "Fuji", d: "Merapi", correct: "B" },
+            { number: 6, text: "Air zam-zam berasal dari mata air di kota?", a: "Madinah", b: "Mekah", c: "Yaman", d: "Mesir", correct: "B" },
+            { number: 7, text: "Hewan yang diambil susunya adalah?", a: "Sapi", b: "Kambing", c: "Kerbau", d: "Kuda", correct: "A" },
+            { number: 8, text: "Warna bendera Indonesia adalah?", a: "Merah-Hitam", b: "Putih-Biru", c: "Merah-Putih", d: "Kuning-Hitam", correct: "C" },
+            { number: 9, text: "Rumus luas persegi panjang adalah?", a: "P x L", b: "S x S", c: "1/2 x a x t", d: "π x r²", correct: "A" },
+            { number: 10, text: "Semboyan negara Indonesia adalah?", a: "Bhinneka Tunggal Ika", b: "Bersatu Kita Teguh", c: "Merdeka atau Mati", d: "Sekali Layar", correct: "A" },
+            { number: 11, text: "Hewan tercepat di darat adalah?", a: "Singa", b: "Harimau", c: "Cheetah", d: "Kuda", correct: "C" },
+            { number: 12, text: "Alat ukur suhu adalah?", a: "Barometer", b: "Hygrometer", c: "Termometer", d: "Anemometer", correct: "C" },
+            { number: 13, text: "Lagu kebangsaan Indonesia?", a: "Indonesia Raya", b: "Garuda Pancasila", c: "Tanah Airku", d: "Maju Tak Gentar", correct: "A" },
+            { number: 14, text: "Panda berasal dari negara?", a: "Jepang", b: "Korea", c: "China", d: "India", correct: "C" },
+            { number: 15, text: "Air terjun tertinggi di dunia?", a: "Niagara", b: "Angel Falls", c: "Victoria", d: "Iguazu", correct: "B" }
+        ];
+
+        const PRIZES = [
+            'Rp 1.000.000', 'Rp 2.000.000', 'Rp 5.000.000', 'Rp 10.000.000', 'Rp 25.000.000',
+            'Rp 50.000.000', 'Rp 100.000.000', 'Rp 250.000.000', 'Rp 500.000.000', 'Rp 750.000.000',
+            'Rp 1.000.000.000', 'Rp 2.000.000.000', 'Rp 5.000.000.000', 'Rp 10.000.000.000', 'Rp 1.000.000.000.000'
+        ];
+        const MILESTONES = [4, 9, 14];
+
+        let allQuestions = [];
+        let currentGameQuestions = [];
+        let currentOptionsOrder = {};
+        let currentQ = 0;
+        let answered = false;
+        let lifelines = { '5050': true, phone: true, audience: true };
+        let hiddenOptions = [];
+        let confirmCallback = null;
+
+        // Fungsi deteksi teks Arab
+        function isArabicText(text) {
+            const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u0870-\u089F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+            return arabicPattern.test(text);
+        }
+
+        function applyArabicFont(element, text) {
+            if (isArabicText(text)) {
+                element.classList.add('arabic');
+                element.setAttribute('lang', 'ar');
+            } else {
+                element.classList.remove('arabic');
+                element.removeAttribute('lang');
+            }
+        }
+
+        // Stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = (Math.random() * 2 + 1) + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Fullscreen Function dengan dynamic adjustment
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const expand = document.getElementById('fs-expand-icon');
+            const compress = document.getElementById('fs-compress-icon');
+            if (document.fullscreenElement) {
+                if (expand) expand.style.display = 'none';
+                if (compress) compress.style.display = '';
+            } else {
+                if (expand) expand.style.display = '';
+                if (compress) compress.style.display = 'none';
+            }
+        });
+
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.background = type === 'success' ? '#15803d' : type === 'error' ? '#b91c1c' : '#eab308';
+            toast.style.color = type === 'success' || type === 'error' ? 'white' : '#0a1a3a';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+
+        function showConfirm(msg, cb) {
+            document.getElementById('confirm-msg').textContent = msg;
+            document.getElementById('confirm-dialog').style.display = 'flex';
+            confirmCallback = cb;
+        }
+
+        document.getElementById('confirm-yes').onclick = () => {
+            document.getElementById('confirm-dialog').style.display = 'none';
+            if (confirmCallback) confirmCallback();
+            confirmCallback = null;
+        };
+        document.getElementById('confirm-no').onclick = () => {
+            document.getElementById('confirm-dialog').style.display = 'none';
+            confirmCallback = null;
+        };
+
+        function toggleMobileLadder() {
+            const ladder = document.getElementById('prize-ladder-col');
+            const overlay = document.getElementById('mobile-overlay');
+            if (ladder.classList.contains('open')) {
+                ladder.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                ladder.classList.add('open');
+                overlay.style.display = 'block';
+            }
+        }
+
+        // ========== FUNGSI PENGACAKAN ==========
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function shuffleQuestions(questions) {
+            return shuffleArray([...questions]);
+        }
+
+        function shuffleOptions(question) {
+            // Ambil teks semua opsi asli
+            const texts = [question.a, question.b, question.c, question.d];
+            const correctText = question[question.correct.toLowerCase()];
+
+            // Acak teks opsi
+            const shuffledTexts = shuffleArray([...texts]);
+
+            // Pasangkan ke label tetap A/B/C/D sesuai posisi baru
+            const positions = ['A', 'B', 'C', 'D'];
+            const order = positions.map((letter, i) => ({ letter, text: shuffledTexts[i] }));
+
+            // Cari label baru untuk jawaban benar
+            const newCorrectLetter = order.find(opt => opt.text === correctText).letter;
+
+            return {
+                order,
+                originalCorrect: question.correct,
+                newCorrect: newCorrectLetter,
+                correctText
+            };
+        }
+
+        // ========== GAME FUNCTIONS ==========
+        function startGame() {
+            stopConfetti();
+            if (allQuestions.length === 0) {
+                showToast('Tambahkan soal terlebih dahulu', 'error');
+                return;
+            }
+            
+            const shuffledQuestions = shuffleQuestions(allQuestions);
+            currentGameQuestions = shuffledQuestions.slice(0, 15);
+            
+            currentOptionsOrder = {};
+            for (let i = 0; i < currentGameQuestions.length; i++) {
+                const q = currentGameQuestions[i];
+                const shuffled = shuffleOptions(q);
+                currentOptionsOrder[i] = shuffled;
+            }
+            
+            currentQ = 0;
+            lifelines = { '5050': true, phone: true, audience: true };
+            hiddenOptions = [];
+            answered = false;
+            
+            showScreen('screen-game');
+            buildLadder();
+            renderGameQuestion();
+            
+            const ladder = document.getElementById('prize-ladder-col');
+            if (ladder.classList.contains('open')) {
+                ladder.classList.remove('open');
+                document.getElementById('mobile-overlay').style.display = 'none';
+            }
+        }
+
+        function buildLadder() {
+            const container = document.getElementById('ladder-items');
+            if (!container) return;
+            container.innerHTML = '';
+            // Urutan dari bawah ke atas (1 di paling bawah, 15 di paling atas)
+            for (let i = 0; i < PRIZES.length; i++) {
+                const div = document.createElement('div');
+                div.id = `ladder-${i}`;
+                div.className = `prize-item ${MILESTONES.includes(i) ? 'milestone' : ''}`;
+                div.innerHTML = `<span class="prize-number">${i+1}</span><span class="prize-amount">${PRIZES[i]}</span>`;
+                container.appendChild(div);
+            }
+        }
+
+        function updateLadder() {
+            for (let i = 0; i < PRIZES.length; i++) {
+                const el = document.getElementById(`ladder-${i}`);
+                if (el) {
+                    el.classList.remove('active', 'passed');
+                    if (i === currentQ) el.classList.add('active');
+                    else if (i < currentQ) el.classList.add('passed');
+                }
+            }
+        }
+
+        function renderGameQuestion() {
+            const q = currentGameQuestions[currentQ];
+            const opts = currentOptionsOrder[currentQ];
+            if (!q) return;
+            
+            document.getElementById('game-q-number').textContent = `Pertanyaan ${currentQ + 1}`;
+            const questionTextEl = document.getElementById('game-q-text');
+            questionTextEl.textContent = q.text;
+            applyArabicFont(questionTextEl, q.text);
+            
+            // Render opsi berdasarkan urutan acak (A/B/C/D = posisi baru)
+            opts.order.forEach(opt => {
+                const btn = document.getElementById(`opt-${opt.letter.toLowerCase()}`);
+                if (btn) {
+                    const textSpan = btn.querySelector('.option-text');
+                    textSpan.textContent = opt.text;
+                    applyArabicFont(textSpan, opt.text);
+                    btn.disabled = false;
+                    btn.style.display = 'flex';
+                    btn.classList.remove('correct', 'wrong', 'selected');
+                }
+            });
+            
+            if (hiddenOptions.length > 0) {
+                hiddenOptions.forEach(optLetter => {
+                    const btn = document.getElementById(`opt-${optLetter.toLowerCase()}`);
+                    if (btn) btn.style.display = 'none';
+                });
+            }
+            
+            document.getElementById('ll-5050').disabled = !lifelines['5050'];
+            document.getElementById('ll-phone').disabled = !lifelines.phone;
+            document.getElementById('ll-audience').disabled = !lifelines.audience;
+            
+            document.getElementById('audience-chart').style.display = 'none';
+            document.getElementById('phone-hint').style.display = 'none';
+            
+            answered = false;
+            updateLadder();
+        }
+
+        function getCurrentCorrectLetter() {
+            const opts = currentOptionsOrder[currentQ];
+            return opts.newCorrect;
+        }
+
+        function selectAnswer(selectedLetter) {
+            if (answered) return;
+            
+            const correctLetter = getCurrentCorrectLetter();
+            answered = true;
+            
+            const selectedBtn = document.getElementById(`opt-${selectedLetter.toLowerCase()}`);
+            if (selectedBtn) selectedBtn.classList.add('selected');
+            
+            ['a','b','c','d'].forEach(opt => {
+                const btn = document.getElementById(`opt-${opt}`);
+                if (btn) btn.disabled = true;
+            });
+            
+            setTimeout(() => {
+                if (selectedBtn) selectedBtn.classList.remove('selected');
+                
+                if (selectedLetter === correctLetter) {
+                    if (selectedBtn) selectedBtn.classList.add('correct');
+                    setTimeout(() => {
+                        if (currentQ === currentGameQuestions.length - 1) {
+                            showResult(true);
+                        } else {
+                            currentQ++;
+                            renderGameQuestion();
+                        }
+                    }, 1500);
+                } else {
+                    if (selectedBtn) selectedBtn.classList.add('wrong');
+                    const correctBtn = document.getElementById(`opt-${correctLetter.toLowerCase()}`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                    setTimeout(() => showResult(false), 2000);
+                }
+            }, 1500);
+        }
+
+        function showResult(won) {
+            if (won) {
+                showScreen('screen-win');
+                document.getElementById('win-prize').textContent = PRIZES[currentQ];
+                document.getElementById('win-detail').textContent = 'Luar biasa! Anda menjawab semua pertanyaan dengan benar! 🎉';
+                launchConfetti();
+                createSparkles();
+            } else {
+                showScreen('screen-result');
+                let guaranteed = null;
+                for (let i = MILESTONES.length - 1; i >= 0; i--) {
+                    if (currentQ > MILESTONES[i]) {
+                        guaranteed = PRIZES[MILESTONES[i]];
+                        break;
+                    }
+                }
+                document.getElementById('result-icon').textContent = '😢';
+                document.getElementById('result-title').textContent = 'GAME OVER';
+                document.getElementById('result-prize').textContent = guaranteed || 'Rp 0';
+                document.getElementById('result-detail').textContent = guaranteed ? `Anda membawa pulang ${guaranteed}` : 'Sayang sekali. Coba lagi ya! 💪';
+            }
+        }
+
+        // ===== CONFETTI & CELEBRATION =====
+        let confettiInterval = null;
+        const confettiColors = ['#FFD700','#FFA500','#FF69B4','#00BFFF','#7FFF00','#FF6347','#DA70D6','#40E0D0','#FFFFFF'];
+
+        function launchConfetti() {
+            let count = 0;
+            confettiInterval = setInterval(() => {
+                if (count > 200) { clearInterval(confettiInterval); return; }
+                for (let i = 0; i < 5; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    const size = Math.random() * 10 + 6;
+                    piece.style.width = size + 'px';
+                    piece.style.height = size * (Math.random() > 0.5 ? 2 : 1) + 'px';
+                    piece.style.left = Math.random() * 100 + 'vw';
+                    piece.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    piece.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(piece);
+                    setTimeout(() => piece.remove(), 4500);
+                }
+                count += 5;
+            }, 80);
+        }
+
+        function stopConfetti() {
+            if (confettiInterval) { clearInterval(confettiInterval); confettiInterval = null; }
+            document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+        }
+
+        function createSparkles() {
+            const container = document.getElementById('sparkles-container');
+            container.innerHTML = '';
+            const symbols = ['✨','⭐','🌟','💫','🎉','🎊'];
+            for (let i = 0; i < 12; i++) {
+                const span = document.createElement('span');
+                span.className = 'sparkle-star';
+                span.textContent = symbols[i % symbols.length];
+                span.style.left = (Math.random() * 90 + 5) + '%';
+                span.style.top = (Math.random() * 80 + 10) + '%';
+                span.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                span.style.animationDelay = (Math.random() * 2) + 's';
+                container.appendChild(span);
+            }
+        }
+
+        function useLifeline(type) {
+            if (!lifelines[type] || answered) return;
+            lifelines[type] = false;
+            
+            const correctLetter = getCurrentCorrectLetter();
+            
+            if (type === '5050') {
+                document.getElementById('ll-5050').disabled = true;
+                const allLetters = ['A', 'B', 'C', 'D'];
+                const wrongLetters = allLetters.filter(l => l !== correctLetter);
+                const toHide = wrongLetters.sort(() => Math.random() - 0.5).slice(0, 2);
+                toHide.forEach(letter => {
+                    const btn = document.getElementById(`opt-${letter.toLowerCase()}`);
+                    if (btn) btn.style.display = 'none';
+                });
+                hiddenOptions = toHide;
+                showToast('50:50 digunakan! Dua jawaban salah dihilangkan.', 'info');
+            } else if (type === 'phone') {
+                document.getElementById('ll-phone').disabled = true;
+                const allLetters = ['A', 'B', 'C', 'D'];
+                const wrongLetters = allLetters.filter(l => l !== correctLetter);
+                const suggestion = wrongLetters[Math.floor(Math.random() * wrongLetters.length)];
+                const pct = Math.floor(65 + Math.random() * 25);
+                document.getElementById('phone-hint-text').innerHTML = `"Saya ${pct}% yakin jawabannya <strong>${suggestion}</strong>."`;
+                document.getElementById('phone-hint').style.display = '';
+            } else if (type === 'audience') {
+                document.getElementById('ll-audience').disabled = true;
+                const idx = ['A','B','C','D'].indexOf(correctLetter);
+                const pcts = [0,0,0,0];
+                pcts[idx] = Math.floor(45 + Math.random() * 35);
+                let remaining = 100 - pcts[idx];
+                for (let i = 0; i < 4; i++) {
+                    if (i === idx) continue;
+                    if (remaining <= 0) { pcts[i] = 0; continue; }
+                    const val = i === 3 ? remaining : Math.floor(Math.random() * remaining);
+                    pcts[i] = val;
+                    remaining -= val;
+                }
+                if (remaining > 0) pcts[idx] += remaining;
+                
+                const bars = document.getElementById('audience-bars');
+                bars.innerHTML = '';
+                ['A','B','C','D'].forEach((o,i) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'flex flex-col items-center';
+                    bar.innerHTML = `
+                        <span class="text-xs text-gray-400 mb-1">${pcts[i]}%</span>
+                        <div class="w-8 md:w-10 rounded-t" style="height:${Math.min(pcts[i]*1.2,80)}px;background:${o===correctLetter ? '#a855f7' : '#4b5563'}"></div>
+                        <span class="text-xs mt-1 font-bold ${o===correctLetter ? 'text-purple-400' : 'text-gray-500'}">${o}</span>`;
+                    bars.appendChild(bar);
+                });
+                document.getElementById('audience-chart').style.display = '';
+            }
+        }
+
+        function confirmQuitGame() {
+            showConfirm('Keluar dari permainan?', () => showScreen('screen-home'));
+        }
+
+        // ========== QUIZ MANAGEMENT ==========
+        // allQuizzes: [{id, name, desc, questions:[]}]
+        let allQuizzes = [];
+        let activeQuizId = null; // quiz yang sedang dibuka di detail
+        let activeQuizForGame = null; // quiz yang akan dimainkan
+
+        function getActiveQuiz() {
+            return allQuizzes.find(q => q.id === activeQuizId) || null;
+        }
+
+        function saveQuizzesToStorage() {
+            if (window.dataSdk && window.dataSdk.setData) {
+                window.dataSdk.setData(allQuizzes);
+            }
+        }
+
+        // ---- RENDER QUIZ LIST ----
+        function renderQuizList() {
+            const container = document.getElementById('quiz-list-container');
+            const emptyMsg = document.getElementById('empty-quiz-msg');
+            container.innerHTML = '';
+            if (allQuizzes.length === 0) {
+                emptyMsg.style.display = 'flex';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+            allQuizzes.forEach(quiz => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/5 border border-white/10 hover:border-yellow-400/40 rounded-xl p-4 transition-all';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <span class="font-bold text-yellow-400 truncate">${quiz.name}</span>
+                            </div>
+                            ${quiz.desc ? `<p class="text-gray-500 text-xs truncate mb-2">${quiz.desc}</p>` : ''}
+                            <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                ${quiz.questions.length} soal
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <button onclick="playQuiz('${quiz.id}')" title="Mainkan" class="flex items-center gap-1 px-2.5 py-1.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Main
+                            </button>
+                            <button onclick="openQuizDetail('${quiz.id}')" title="Detail" class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Detail
+                            </button>
+                            <button onclick="openEditQuizModal('${quiz.id}')" title="Edit" class="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Edit
+                            </button>
+                            <button onclick="deleteQuiz('${quiz.id}')" title="Hapus" class="flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded-lg text-xs font-bold transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ---- QUIZ CRUD ----
+        function openCreateQuizModal() {
+            document.getElementById('quiz-form-title').textContent = 'Quiz Baru';
+            document.getElementById('quiz-edit-id').value = '';
+            document.getElementById('quiz-name-input').value = '';
+            document.getElementById('quiz-desc-input').value = '';
+            document.getElementById('modal-quiz-form').style.display = 'flex';
+        }
+
+        function openEditQuizModal(id) {
+            const quiz = allQuizzes.find(q => q.id === id);
+            if (!quiz) return;
+            document.getElementById('quiz-form-title').textContent = 'Edit Quiz';
+            document.getElementById('quiz-edit-id').value = id;
+            document.getElementById('quiz-name-input').value = quiz.name;
+            document.getElementById('quiz-desc-input').value = quiz.desc || '';
+            document.getElementById('modal-quiz-form').style.display = 'flex';
+        }
+
+        function saveQuiz() {
+            const name = document.getElementById('quiz-name-input').value.trim();
+            if (!name) { showToast('Nama quiz tidak boleh kosong', 'error'); return; }
+            const desc = document.getElementById('quiz-desc-input').value.trim();
+            const editId = document.getElementById('quiz-edit-id').value;
+            if (editId) {
+                const idx = allQuizzes.findIndex(q => q.id === editId);
+                if (idx !== -1) { allQuizzes[idx].name = name; allQuizzes[idx].desc = desc; }
+            } else {
+                allQuizzes.push({ id: 'quiz_' + Date.now(), name, desc, questions: [] });
+            }
+            saveQuizzesToStorage();
+            renderQuizList();
+            closeModal('modal-quiz-form');
+            showToast(editId ? 'Quiz diperbarui' : 'Quiz baru dibuat', 'success');
+        }
+
+        function deleteQuiz(id) {
+            const quiz = allQuizzes.find(q => q.id === id);
+            if (!quiz) return;
+            showConfirm(`Hapus quiz "${quiz.name}"? Semua soal di dalamnya akan terhapus.`, () => {
+                allQuizzes = allQuizzes.filter(q => q.id !== id);
+                saveQuizzesToStorage();
+                renderQuizList();
+                updateHomeQuestionCount();
+                showToast('Quiz dihapus', 'success');
+            });
+        }
+
+        function playQuiz(id) {
+            const quiz = allQuizzes.find(q => q.id === id);
+            if (!quiz) return;
+            if (quiz.questions.length === 0) { showToast('Quiz ini belum memiliki soal', 'error'); return; }
+            allQuestions = [...quiz.questions];
+            activeQuizForGame = id;
+            startGame();
+        }
+
+        // ---- QUIZ DETAIL ----
+        function openQuizDetail(id) {
+            activeQuizId = id;
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            document.getElementById('detail-quiz-title').textContent = quiz.name;
+            document.getElementById('detail-quiz-desc').textContent = quiz.desc || 'Tidak ada deskripsi';
+            renderDetailQuestions();
+            showScreen('screen-quiz-detail');
+        }
+
+        function renderDetailQuestions() {
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            const container = document.getElementById('detail-question-list');
+            const emptyMsg = document.getElementById('empty-detail-msg');
+            const countEl = document.getElementById('detail-soal-count');
+            countEl.textContent = quiz.questions.length;
+            container.innerHTML = '';
+            if (quiz.questions.length === 0) {
+                emptyMsg.style.display = 'flex';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+            quiz.questions.forEach((q, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white/5 border border-white/10 rounded-xl px-4 py-3 hover:border-yellow-400/30 transition-all';
+                div.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs bg-yellow-500/20 text-yellow-400 font-bold px-2 py-0.5 rounded">#${q.number}</span>
+                                <span class="text-sm font-medium truncate">${q.text.substring(0, 60)}${q.text.length > 60 ? '…' : ''}</span>
+                            </div>
+                            <div class="flex gap-2 flex-wrap mt-1">
+                                ${['a','b','c','d'].map(l => `
+                                    <span class="text-xs px-1.5 py-0.5 rounded ${q.correct === l.toUpperCase() ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/30' : 'bg-white/5 text-gray-500'}">
+                                        ${l.toUpperCase()}: ${q[l] ? q[l].substring(0,20) : ''}
+                                    </span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="flex gap-1.5 flex-shrink-0">
+                            <button onclick="openEditQuestionModal(${q.number})" title="Edit" class="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onclick="deleteQuestion(${q.number})" title="Hapus" class="p-1.5 bg-white/10 hover:bg-red-600/50 rounded-lg transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ---- QUESTION CRUD (in detail) ----
+        function openAddQuestionModal() {
+            document.getElementById('question-form-title').textContent = 'Tambah Soal';
+            document.getElementById('edit-id').value = '';
+            document.getElementById('q-number').value = '';
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-a').value = '';
+            document.getElementById('q-b').value = '';
+            document.getElementById('q-c').value = '';
+            document.getElementById('q-d').value = '';
+            document.getElementById('q-correct').value = 'A';
+            document.getElementById('modal-question-form').style.display = 'flex';
+        }
+
+        function openEditQuestionModal(num) {
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            const q = quiz.questions.find(x => x.number === num);
+            if (!q) return;
+            document.getElementById('question-form-title').textContent = 'Edit Soal';
+            document.getElementById('edit-id').value = q.number;
+            document.getElementById('q-number').value = q.number;
+            document.getElementById('q-text').value = q.text;
+            document.getElementById('q-a').value = q.a;
+            document.getElementById('q-b').value = q.b;
+            document.getElementById('q-c').value = q.c;
+            document.getElementById('q-d').value = q.d;
+            document.getElementById('q-correct').value = q.correct;
+            document.getElementById('modal-question-form').style.display = 'flex';
+        }
+
+        function saveQuestion() {
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            const num = parseInt(document.getElementById('q-number').value);
+            const text = document.getElementById('q-text').value.trim();
+            const a = document.getElementById('q-a').value.trim();
+            const b = document.getElementById('q-b').value.trim();
+            const c = document.getElementById('q-c').value.trim();
+            const d = document.getElementById('q-d').value.trim();
+            const correct = document.getElementById('q-correct').value;
+            if (!num || !text || !a || !b || !c || !d) { showToast('Lengkapi semua field', 'error'); return; }
+            const data = { number: num, text, a, b, c, d, correct };
+            const editId = document.getElementById('edit-id').value;
+            if (editId) {
+                const idx = quiz.questions.findIndex(q => q.number === parseInt(editId));
+                if (idx !== -1) quiz.questions[idx] = data;
+            } else {
+                quiz.questions.push(data);
+            }
+            quiz.questions.sort((a, b) => a.number - b.number);
+            saveQuizzesToStorage();
+            renderDetailQuestions();
+            closeModal('modal-question-form');
+            updateHomeQuestionCount();
+            showToast(editId ? 'Soal diperbarui' : 'Soal ditambahkan', 'success');
+        }
+
+        function deleteQuestion(num) {
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            showConfirm(`Hapus soal #${num}?`, () => {
+                quiz.questions = quiz.questions.filter(q => q.number !== num);
+                saveQuizzesToStorage();
+                renderDetailQuestions();
+                updateHomeQuestionCount();
+                showToast('Soal dihapus', 'success');
+            });
+        }
+
+        // ---- IMPORT ----
+        function openImportModal() {
+            document.getElementById('import-json-input').value = '';
+            document.getElementById('import-file-input').value = '';
+            document.getElementById('modal-import').style.display = 'flex';
+        }
+
+        function loadImportFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                document.getElementById('import-json-input').value = ev.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        function executeImport() {
+            const quiz = getActiveQuiz();
+            if (!quiz) return;
+            const raw = document.getElementById('import-json-input').value.trim();
+            let parsed;
+            try { parsed = JSON.parse(raw); } catch(e) { showToast('Format JSON tidak valid', 'error'); return; }
+            if (!Array.isArray(parsed)) { showToast('Data harus berupa array JSON', 'error'); return; }
+            let added = 0, skipped = 0;
+            parsed.forEach(item => {
+                if (!item.number || !item.text || !item.a || !item.b || !item.c || !item.d || !item.correct) { skipped++; return; }
+                const exists = quiz.questions.findIndex(q => q.number === parseInt(item.number));
+                const q = { number: parseInt(item.number), text: item.text, a: item.a, b: item.b, c: item.c, d: item.d, correct: item.correct.toUpperCase() };
+                if (exists !== -1) { quiz.questions[exists] = q; } else { quiz.questions.push(q); added++; }
+            });
+            quiz.questions.sort((a, b) => a.number - b.number);
+            saveQuizzesToStorage();
+            renderDetailQuestions();
+            closeModal('modal-import');
+            updateHomeQuestionCount();
+            showToast(`Import selesai: ${added} soal ditambahkan${skipped > 0 ? ', ' + skipped + ' dilewati' : ''}`, 'success');
+        }
+
+        // ---- UTILS ----
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function updateHomeQuestionCount() {
+            const total = allQuizzes.reduce((sum, q) => sum + q.questions.length, 0);
+            const countEl = document.getElementById('home-question-count');
+            if (countEl) countEl.textContent = `${allQuizzes.length} quiz · ${total} soal tersedia`;
+            const playBtn = document.getElementById('btn-play');
+            if (playBtn) playBtn.disabled = total === 0;
+        }
+
+        // ---- SHOW SCREEN ----
+        function showScreen(id) {
+            document.getElementById('screen-home').style.display = id === 'screen-home' ? 'flex' : 'none';
+            document.getElementById('screen-setup').style.display = id === 'screen-setup' ? 'flex' : 'none';
+            document.getElementById('screen-quiz-detail').style.display = id === 'screen-quiz-detail' ? 'flex' : 'none';
+            document.getElementById('screen-game').style.display = id === 'screen-game' ? 'flex' : 'none';
+            document.getElementById('screen-result').style.display = id === 'screen-result' ? 'flex' : 'none';
+            document.getElementById('screen-win').style.display = id === 'screen-win' ? 'flex' : 'none';
+            if (id === 'screen-home') {
+                updateHomeQuestionCount();
+                stopConfetti();
+            }
+            if (id === 'screen-setup') {
+                renderQuizList();
+            }
+        }
+
+        // ========== DATA INIT ==========
+        const dataHandler = {
+            onDataChanged(data) {
+                if (data && Array.isArray(data) && data.length > 0 && data[0].questions !== undefined) {
+                    // New multi-quiz format
+                    allQuizzes = data;
+                } else if (data && Array.isArray(data) && data.length > 0 && data[0].text !== undefined) {
+                    // Legacy single-quiz format → migrate
+                    allQuizzes = [{ id: 'quiz_default', name: 'Quiz Default', desc: 'Diimpor dari versi lama', questions: data }];
+                } else {
+                    // Default sample
+                    allQuizzes = [{
+                        id: 'quiz_sample',
+                        name: 'Fikih - Kelas 5',
+                        desc: 'Contoh soal SD',
+                        questions: DEFAULT_QUESTIONS
+                    }];
+                }
+                allQuestions = allQuizzes[0] ? [...allQuizzes[0].questions] : [];
+                updateHomeQuestionCount();
+            }
+        };
+
+        (async () => {
+            try {
+                if (window.dataSdk) { await window.dataSdk.init(dataHandler); }
+                else { dataHandler.onDataChanged(null); }
+            } catch(e) { dataHandler.onDataChanged(null); }
+        })();
+
+        if (window.elementSdk) {
+            window.elementSdk.init({ defaultConfig: { game_title: 'Who Wants to Be a Millionaire?', host_name: 'SD Edition' } });
+        }
+    </script>    <!-- MODAL: CREATE/EDIT QUIZ -->
+    <div id="modal-quiz-form" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display:none;">
+        <div class="bg-gradient-to-b from-[#0a1a3a] to-[#030614] border-2 border-yellow-400 rounded-2xl p-6 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="quiz-form-title" class="text-yellow-400 font-bold text-lg">Quiz Baru</h3>
+                <button onclick="closeModal('modal-quiz-form')" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="quiz-edit-id">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Nama Quiz <span class="text-red-400">*</span></label>
+                    <input id="quiz-name-input" type="text" placeholder="contoh: Fikih Kelas 5" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-yellow-400 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Deskripsi</label>
+                    <input id="quiz-desc-input" type="text" placeholder="opsional" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-yellow-400 outline-none">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal('modal-quiz-form')" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-all">Batal</button>
+                    <button onclick="saveQuiz()" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 font-bold rounded-lg hover:from-yellow-400 hover:to-yellow-500 transition-all">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT QUESTION -->
+    <div id="modal-question-form" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display:none;">
+        <div class="bg-gradient-to-b from-[#0a1a3a] to-[#030614] border-2 border-yellow-400 rounded-2xl p-5 max-w-lg w-full mx-4 max-h-[90dvh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="question-form-title" class="text-yellow-400 font-bold text-lg">Tambah Soal</h3>
+                <button onclick="closeModal('modal-question-form')" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nomor Soal (1–15)</label>
+                    <input id="q-number" type="number" min="1" max="15" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Pertanyaan <span class="text-red-400">*</span></label>
+                    <textarea id="q-text" rows="3" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="block text-xs text-gray-400 mb-1">Opsi A <span class="text-red-400">*</span></label><input id="q-a" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none"></div>
+                    <div><label class="block text-xs text-gray-400 mb-1">Opsi B <span class="text-red-400">*</span></label><input id="q-b" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none"></div>
+                    <div><label class="block text-xs text-gray-400 mb-1">Opsi C <span class="text-red-400">*</span></label><input id="q-c" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none"></div>
+                    <div><label class="block text-xs text-gray-400 mb-1">Opsi D <span class="text-red-400">*</span></label><input id="q-d" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none"></div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Jawaban Benar</label>
+                    <select id="q-correct" class="w-full bg-[#0a1a3a] border border-white/20 rounded-lg px-3 py-2 text-white focus:border-yellow-400 outline-none">
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal('modal-question-form')" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-all">Batal</button>
+                    <button onclick="saveQuestion()" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 font-bold rounded-lg hover:from-yellow-400 hover:to-yellow-500 transition-all">Simpan Soal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: IMPORT SOAL -->
+    <div id="modal-import" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display:none;">
+        <div class="bg-gradient-to-b from-[#0a1a3a] to-[#030614] border-2 border-blue-400 rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[90dvh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-blue-300 font-bold text-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import Soal (JSON)
+                </h3>
+                <button onclick="closeModal('modal-import')" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <p class="text-gray-400 text-xs mb-3">Tempel data JSON soal (array). Format: <code class="text-blue-300">[{"number":1,"text":"...","a":"...","b":"...","c":"...","d":"...","correct":"A"}, ...]</code></p>
+            <textarea id="import-json-input" rows="8" placeholder='[{"number":1,"text":"Pertanyaan?","a":"A","b":"B","c":"C","d":"D","correct":"A"}]' class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-xs font-mono focus:border-blue-400 outline-none resize-none mb-3"></textarea>
+            <div class="flex gap-3">
+                <label class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg font-semibold cursor-pointer transition-all text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Pilih File JSON
+                    <input type="file" accept=".json" id="import-file-input" class="hidden" onchange="loadImportFile(event)">
+                </label>
+                <button onclick="executeImport()" class="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:from-blue-500 hover:to-blue-600 transition-all text-sm flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Import Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
